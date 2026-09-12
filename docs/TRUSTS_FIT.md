@@ -7,9 +7,9 @@ authorization thesis is complete.
 Example behavior changes are recorded in [migrates.md](../migrates.md).
 django-trusts-zero owns the concrete Trust/Content models, stored
 grants, and `TrustModelBackend`. Schema-neutral django-trusts is the
-library Zero depends on. This example pins Zero PR #20 merge
-`809d7c1c7dcc145d5b6ee7124e0419fdeb6b8034` with core PR #121 merge
-`7aedf92720fbfe5db838754f15b24706ac8f512f`. It does not register a
+library Zero depends on. This example pins Zero Z-convert PR #26 merge
+`bceb0241b482fdc4f31dd72c7600c52eeb4e6cff` with Core Stage A PR #144
+merge `710b3ea26778ff069d1f5329adc9f2f481a1ea92`. It does not register a
 Project permission condition.
 
 Inspected for this revision:
@@ -18,8 +18,9 @@ Inspected for this revision:
 | --- | --- | --- |
 | `django-trusts-example` default `master` | pre-#5 | Demo against Trusts post-#19; group attach implied access. |
 | Historical `DJANGO-TRUSTS-8-Edit-Perm-Pages` / PR #1 | `54e83b76fee2e6e950cec94366adec038ebc1260` | Incomplete Project / collaborator UI on Django 1.8 / Python 2. |
-| `django-trusts-zero` (PR #20 merge) | `809d7c1c7dcc145d5b6ee7124e0419fdeb6b8034` | Concrete Trust/Content install used here. |
-| `django-trusts` (PR #121 merge) | `7aedf92720fbfe5db838754f15b24706ac8f512f` | Schema-neutral core library Zero depends on. |
+| Example `dev` baseline (pre-#14) | `1e12335821d698b7cd4fcc822addde7c054f7dea` | Alice/Bob demo on Zero PR #20 / core PR #121. |
+| `django-trusts-zero` (PR #26 merge) | `bceb0241b482fdc4f31dd72c7600c52eeb4e6cff` | Z-convert: `Trust:own` is a donated builder. |
+| `django-trusts` (PR #144 merge) | `710b3ea26778ff069d1f5329adc9f2f481a1ea92` | Core Stage A: registration-time builders. |
 
 The historical branch is the useful ancestor for *domain shape* (a `Project`
 `Content` subclass, settlor trusts, collaborators, groups). Zero ships
@@ -88,15 +89,29 @@ the TrustGroup local/global intersection.
   **not** special-case superusers; a superuser may see a narrower list than
   `has_perm` would allow. That mismatch is documented, not treated as
   Trusts validation.
-- `:own` on `Trust` is a registered **V1 `Expr`** (`u == o.settlor` from
-  `condition_refs()`), queryable on `Trust.objects.permitted`. This
+- `:own` on `Trust` is a **registration-time builder** donated by Zero
+  during `ZeroConfig.ready()`:
+
+  ```python
+  handle.register_permission_condition(
+      Trust, "own", lambda u, p, o: u == o.settlor,
+  )
+  ```
+
+  Core invokes the callable once with symbolic refs (zero SQL on the
+  first-party donation path), stores only normalized IR, and never runs
+  it during `has_perm` or `.permitted()`. Object checks and
+  `Trust.objects.permitted("change:own", user)` share that IR. This
   example does not register a Project condition and does not use `:own`
   for project list membership. Public / private is a group grant, not a
-  condition code. Callable conditions stay off (`TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`
-  is unset; default False). `manage.py check` must stay clean of
-  `trusts.E001` / `trusts.E002`.
+  condition code. Application modules do not import `condition_refs`,
+  `Expr`, or other Core condition-node constructors.
+  `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS` is unset; if it were
+  `True` it would be `trusts.E007` and would not restore runtime
+  callbacks. `manage.py check` must stay clean of `trusts.E001` /
+  `trusts.E007`.
 
 Windows ACL work stays on django-trusts#17 and is out of this issue.
-Parent Trust inheritance and explicit deny stay out of scope. Core V1
-`Expr` SQL compilation is available; this demo does not register a
+Parent Trust inheritance and explicit deny stay out of scope. Core
+builder registration is available; this demo does not register a
 Project condition.
