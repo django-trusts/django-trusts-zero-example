@@ -341,3 +341,146 @@ Deploy this revision from the repository's `dev` branch after review; keep `mast
 - [ ] Set `CSRF_TRUSTED_ORIGINS` on HTTPS deploys (unchanged; still no private hostname defaults).
 - [ ] Do not add Windows ACL proof code or a schema-neutral core example in this issue.
 
+# Adopt registration-time builders (issue #14 / core #142 E-convert)
+
+This record covers the example after Core **#142 Stage A / PR #144**
+(`710b3ea26778ff069d1f5329adc9f2f481a1ea92`) and Zero **Z-convert /
+PR #26** (`bceb0241b482fdc4f31dd72c7600c52eeb4e6cff`). Core and Zero
+`migrates.md` on those revisions are the library contract. This file
+records **example** old/new behavior only.
+
+Authorization data and seeded Alice/Bob/Carol/Dave identities stay the
+same. Named-condition construction and proof do not. Repository
+`master` and tag `dev_split_core_attempt_1` stay on the pre-Zero
+baseline; this issue does not rewrite or fast-forward either.
+
+## Pin
+
+| | |
+| --- | --- |
+| Previous | `django-trusts-zero` at `809d7c1c7dcc145d5b6ee7124e0419fdeb6b8034` (PR #20) depending on `django-trusts` at `7aedf92720fbfe5db838754f15b24706ac8f512f` (PR #121). |
+| New | `django-trusts-zero` at `bceb0241b482fdc4f31dd72c7600c52eeb4e6cff` (PR #26 Z-convert) depending on `django-trusts` at `710b3ea26778ff069d1f5329adc9f2f481a1ea92` (PR #144 Core Stage A). |
+| Replacement | Same git URLs, new full SHAs in `requirements.txt` / `pyproject.toml`. |
+| Affected | Docs, condition proofs, `manage.py check` IDs. Seed, views, TrustGroup UI, and list SQL are unchanged. |
+| Authorization | Unchanged seeded allow/deny. `Trust:own` still means `u == o.settlor` on both `has_perm` and `.permitted()`. Project still has no condition. Public / private stays a group grant. |
+
+## Old → new
+
+```python
+# Old (example tests / docs taught public node construction)
+from trusts.conditions import Expr, condition_refs
+
+u, p, o = condition_refs()
+record = handle.registry.get_permission_condition_record(Trust, "own")
+assert isinstance(record.expr, Expr)
+assert record.func is None
+# TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS leftover → trusts.E002
+
+# New (Zero donates a builder at startup; prove public outcomes only)
+handle.register_permission_condition(
+    Trust, "own", lambda u, p, o: u == o.settlor,
+)
+user.has_perm("trusts.change_trust:own", trust)
+Trust.objects.permitted("change:own", user)
+# leftover TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS=True → trusts.E007
+```
+
+Unchanged public call sites: `User.has_perm`, `Project.objects.permitted`,
+`trusts.decorators.permission_required` + `K("pk")`, trustee /
+TrustGroup writers, `ProjectsConfig.ready()` `register_zero_content`.
+
+## Changes (example)
+
+### 13. Drop public condition-node construction and compiler-storage asserts
+
+| | |
+| --- | --- |
+| Previous | Tests imported `Expr` and asserted `record.expr` / `record.func is None`. Docs taught `condition_refs()` plus an `Expr` for a future Project condition. `manage.py check` was documented against `trusts.E001` / `trusts.E002`. |
+| New | Application modules import no Core condition nodes. Tests prove `Trust:own` through object `has_perm`, queryset `.permitted()`, and fail-closed unknown Project `:own`. Builder donation is zero-SQL at startup / isolated re-register. Leftover callback setting, if True, is `trusts.E007` and does not enable callbacks. |
+| Replacement | `handle.register_permission_condition(Model, "code", lambda u, p, o: ...)`. Do not import `condition_refs` / `Expr`. Do not read `record.expr` / `record.func`. |
+| Affected | `projects/tests.py`, README, `docs/TRUSTS_FIT.md`, pin comments. Views and seed are unchanged. |
+| Authorization | Same grants as the Zero-install pin. `:own` still narrows an existing Trust grant to the settlor; it does not create a grant. |
+
+### 14. Dependency pair is the reviewed Core A + Zero Z-convert heads
+
+| | |
+| --- | --- |
+| Previous | Zero PR #20 + core PR #121. |
+| New | Exact pair above. Packaged install must resolve those git commits (`direct_url.json`). |
+| Replacement | Same install files; new SHAs. |
+| Affected | `requirements.txt`, `pyproject.toml`, CI install step. |
+| Authorization | Unchanged once the pair is installed. A mixed pin would fail closed (Zero builders against pre-A Core, or example Expr asserts against Stage A records). |
+
+## Fail-closed rollout
+
+1. Example `dev` stays at `1e12335821d698b7cd4fcc822addde7c054f7dea` until this PR.
+2. Pin Core `710b3ea…` and Zero `bceb024…` together. Do not pin only one.
+3. Convert tests and docs in the same PR as the pin bump.
+4. `python manage.py check` and the full SQLite / MySQL matrix must be green before undrafting.
+5. Core Stage B (reject `Expr` / hide public node imports) waits until this example head is green on the pair.
+
+## Rollback
+
+Revert this example PR (or restore the previous pin pair and Expr proofs).
+Do not rewrite `master` or tag `dev_split_core_attempt_1`. No Trusts
+schema or seed rewrite is involved, so rollback does not migrate data.
+
+## Migration-bot checklist
+
+- [ ] Confirm `requirements.txt` / `pyproject.toml` pin Core
+      `710b3ea26778ff069d1f5329adc9f2f481a1ea92` and Zero
+      `bceb0241b482fdc4f31dd72c7600c52eeb4e6cff` (full SHAs).
+- [ ] Search application modules (`projects/`, `example/`, excluding
+      tests) for `condition_refs`, `Expr`, `from trusts.conditions
+      import`, `from django_trusts import`. Those construction imports
+      must be gone.
+- [ ] Search tests for `record.expr`, `record.func`,
+      `isinstance(..., Expr)`. Replace with `has_perm` /
+      `.permitted()` / `AttributeError` on unknown `:code`.
+- [ ] Search for `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`,
+      `trusts.E002`, `trusts.W001`. The leftover-setting error is
+      `trusts.E007`. Do not set the flag.
+- [ ] Confirm `Trust:own` object and listing decisions still agree
+      (`change_trust:own` / `Trust.objects.permitted("change:own", user)`).
+- [ ] Confirm Project has no `:own` (unknown code fails closed).
+- [ ] Confirm first-party builder donation is `assertNumQueries(0)`
+      and happens during startup (`ZeroConfig.ready()`).
+- [ ] Confirm `python manage.py check` is clean of `trusts.E001` /
+      `trusts.E007`.
+- [ ] Keep `permission_required` + `K("pk")`. Do not adopt
+      `require_authorized` here (#138).
+- [ ] Do not apply a new Trusts schema or data migration; none was added.
+- [ ] Do not rewrite or fast-forward `master` or
+      `dev_split_core_attempt_1`.
+- [ ] Do not start Core Stage B, #138, #137, #145, GH permissions,
+      Windows ACL, or deployment (#7/#13) in this PR.
+
+## Deployment / migration checklist (example)
+
+Deployment remains separately owned by #7/#13. This issue creates no
+infrastructure action.
+
+- [ ] Install Zero at `bceb0241b482fdc4f31dd72c7600c52eeb4e6cff` and
+      core at `710b3ea26778ff069d1f5329adc9f2f481a1ea92`.
+- [ ] Deploy later from `dev` if an operator chooses; do not advance
+      the preserved `master` branch.
+- [ ] `python manage.py check` (must be clean of `trusts.E001` /
+      `trusts.E007`).
+- [ ] `python manage.py migrate --noinput` (no new Trusts migration
+      expected; loader keys unchanged).
+- [ ] `python manage.py seed_demo` only if the database is new or local
+      TrustGroup rows are missing.
+- [ ] `python manage.py test projects`
+- [ ] Keep `AUTHENTICATION_BACKENDS` as
+      `trusts.zero.backends.TrustModelBackend`.
+- [ ] Do not set `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`.
+- [ ] Set `CSRF_TRUSTED_ORIGINS` on HTTPS deploys (unchanged).
+
+## Out of scope (this slice)
+
+- Runtime callbacks, portable JSON, registration identity (#145)
+- Core Stage B removals
+- `require_authorized` / decorator inference (#138)
+- Deployment / infrastructure (#7/#13)
+- #137, GH permissions, Windows ACL, unrelated cleanup
+

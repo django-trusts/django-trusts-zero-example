@@ -79,9 +79,11 @@ python manage.py check
 python manage.py test projects
 ```
 
-`manage.py check` must remain clean of `trusts.E001` and `trusts.E002`
-(invalid declarative expressions or leftover callable conditions). The
-example does not enable legacy permission callbacks.
+`manage.py check` must remain clean of `trusts.E001` (invalid stored
+condition IR) and `trusts.E007` (leftover
+`TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`). Named conditions are
+registration-time builders. The example does not set that leftover flag
+and does not register a Project condition.
 
 CI tests Python 3.12–3.14 with Django 6.1 and SQLite, including a fresh
 migration and seed plus collected static files. A separate MySQL 8 job runs
@@ -89,11 +91,11 @@ the same system check, migration, seed, and authorized-list smoke path.
 
 ## Configuration
 
-The application installs
-[django-trusts-zero at `809d7c1c`](https://github.com/django-trusts/django-trusts-zero/commit/809d7c1c7dcc145d5b6ee7124e0419fdeb6b8034)
-(PR #20) with
-[schema-neutral django-trusts at `7aedf927`](https://github.com/django-trusts/django-trusts/commit/7aedf92720fbfe5db838754f15b24706ac8f512f)
-(PR #121). The exact compatible revisions are pinned in
+The application installs the reviewed #142 pair:
+[django-trusts-zero at `bceb0241b482fdc4f31dd72c7600c52eeb4e6cff`](https://github.com/django-trusts/django-trusts-zero/commit/bceb0241b482fdc4f31dd72c7600c52eeb4e6cff)
+(Z-convert, PR #26) with
+[schema-neutral django-trusts at `710b3ea26778ff069d1f5329adc9f2f481a1ea92`](https://github.com/django-trusts/django-trusts/commit/710b3ea26778ff069d1f5329adc9f2f481a1ea92)
+(Core Stage A, PR #144). The exact compatible revisions are pinned in
 `requirements.txt` and `pyproject.toml`.
 
 The relevant Django settings are:
@@ -111,8 +113,21 @@ AUTHENTICATION_BACKENDS = [
 ```
 
 `ProjectsConfig.ready()` registers `Project` as a Zero content terminal.
-The concrete Trust, Content, stored-grant, and authorization-helper APIs live
-under `trusts.zero.*`; view guards come from schema-neutral core.
+Zero donates `Trust:own` during startup as a registration-time builder:
+
+```python
+handle.register_permission_condition(
+    Trust, "own", lambda u, p, o: u == o.settlor,
+)
+```
+
+Core invokes that callable once with symbolic refs, stores only the
+normalized predicate, and never runs it during `has_perm` or
+`.permitted()`. This example does not register a Project condition and
+does not import `condition_refs`, `Expr`, or other Core condition-node
+constructors. The concrete Trust, Content, stored-grant, and
+authorization-helper APIs live under `trusts.zero.*`; view guards come
+from schema-neutral core.
 
 ## Deploy on Dokku
 

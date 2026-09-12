@@ -1,3 +1,8 @@
+import ast
+import json
+import re
+from importlib.metadata import distribution
+from pathlib import Path
 from unittest.mock import patch
 
 from django.contrib.admin.sites import AdminSite
@@ -13,10 +18,13 @@ from django.forms import modelform_factory
 from django.test import RequestFactory, SimpleTestCase, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
-from trusts.conditions import Expr
-from trusts.core import any_plan_records
+from trusts.core import TrustsRegistry, any_plan_records
 from trusts.zero.apps import CANONICAL_BACKEND_PATH, zero_config
 from trusts.zero.models import Role, Trust, TrustGroup, TrustGroupPermission, TrustUserPermission
+from trusts.zero.registration import (
+    donate_content_permission_conditions,
+    donate_installed_permission_conditions,
+)
 
 from .demo import seed_demo
 from .grants import (
@@ -34,9 +42,51 @@ from .query import editable_projects, readable_projects
 
 User = get_user_model()
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+CORE_PIN_SHA = "710b3ea26778ff069d1f5329adc9f2f481a1ea92"
+ZERO_PIN_SHA = "bceb0241b482fdc4f31dd72c7600c52eeb4e6cff"
+FORBIDDEN_CONDITION_NODES = frozenset(
+    {
+        "condition_refs",
+        "principal_ref",
+        "permission_ref",
+        "object_ref",
+        "Expr",
+        "Const",
+        "Eq",
+        "Ne",
+        "And",
+        "Or",
+    }
+)
 
-def zero_registry():
-    return zero_config().configured_backend(CANONICAL_BACKEND_PATH).registry
+
+def _pin_sha_from_requirements(package):
+    text = (REPO_ROOT / "requirements.txt").read_text()
+    match = re.search(
+        rf"{re.escape(package)} @ git\+https://github\.com/[^@\s]+@([0-9a-f]{{40}})",
+        text,
+    )
+    if match is None:
+        raise AssertionError(f"full SHA pin for {package} missing from requirements.txt")
+    return match.group(1)
+
+
+def _installed_vcs_commit(dist_name):
+    dist = distribution(dist_name)
+    payload = dist.read_text("direct_url.json")
+    if not payload:
+        raise AssertionError(f"{dist_name} has no direct_url.json (expected a git pin)")
+    return json.loads(payload)["vcs_info"]["commit_id"]
+
+
+def _application_python_files():
+    skip_names = {"tests.py", "tests_deploy.py"}
+    for root in (REPO_ROOT / "projects", REPO_ROOT / "example"):
+        for path in root.rglob("*.py"):
+            if path.name in skip_names or "migrations" in path.parts:
+                continue
+            yield path
 
 
 class SeededTrustsDemoTests(TestCase):
@@ -300,9 +350,10 @@ class PaginationAndQueryTests(TestCase):
         self.assertTrue(is_public(changelog))
         dave = User.objects.get(username="dave")
         self.assertTrue(dave.has_perm("projects.read_project", changelog))
-        # :own is a V1 Expr on Trust. Project does not register one;
+        # Trust :own is a donated builder. Project does not register one;
         # public read is a group row, not a condition code.
-        self.assertIsNone(zero_registry().get_permission_condition_record(Project, "own"))
+        with self.assertRaises(AttributeError):
+            dave.has_perm("projects.read_project:own", changelog)
         self.assertFalse(dave.has_perm("projects.change_project", changelog))
 
 
@@ -847,7 +898,7 @@ class TrustGroupProjectSettingsTests(TestCase):
 
 
 class ZeroInstallAndCheckTests(SimpleTestCase):
-    """Zero install identity: ZeroConfig, Zero backend, Expr :own, clean check."""
+    """Zero install identity: ZeroConfig, Zero backend, builder :own, clean check."""
 
     def test_installed_apps_use_zero_config_not_bare_trusts(self):
         self.assertIn("trusts.zero.apps.ZeroConfig", settings.INSTALLED_APPS)
@@ -867,25 +918,125 @@ class ZeroInstallAndCheckTests(SimpleTestCase):
         handles = zero_config().configured_handles()
         self.assertTrue(any_plan_records(handles, Project))
 
-    def test_legacy_callback_escape_hatch_is_unset(self):
+    def test_legacy_callback_setting_is_unset(self):
         self.assertFalse(
             getattr(settings, "TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS", False)
         )
 
-    def test_trust_own_is_queryable_expr_not_a_callable(self):
-        record = zero_registry().get_permission_condition_record(Trust, "own")
-        self.assertIsNotNone(record)
-        self.assertIsInstance(record.expr, Expr)
-        self.assertIsNone(record.func)
-        self.assertIsNone(zero_registry().get_permission_condition_record(Project, "own"))
+    def test_paired_core_and_zero_pins_are_installed(self):
+        self.assertEqual(_pin_sha_from_requirements("django-trusts"), CORE_PIN_SHA)
+        self.assertEqual(_pin_sha_from_requirements("django-trusts-zero"), ZERO_PIN_SHA)
+        pyproject = (REPO_ROOT / "pyproject.toml").read_text()
+        self.assertIn(CORE_PIN_SHA, pyproject)
+        self.assertIn(ZERO_PIN_SHA, pyproject)
+        self.assertEqual(_installed_vcs_commit("django-trusts"), CORE_PIN_SHA)
+        self.assertEqual(_installed_vcs_commit("django-trusts-zero"), ZERO_PIN_SHA)
+
+    def test_application_modules_do_not_import_core_condition_nodes(self):
+        imported = []
+        for path in _application_python_files():
+            tree = ast.parse(path.read_text(), filename=str(path))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ImportFrom) and node.module in {
+                    "trusts.conditions",
+                    "django_trusts",
+                }:
+                    for alias in node.names or []:
+                        if alias.name in FORBIDDEN_CONDITION_NODES or alias.name == "*":
+                            imported.append(f"{path.relative_to(REPO_ROOT)}:{alias.name}")
+        self.assertEqual(imported, [])
 
     def test_system_checks_have_no_trusts_condition_errors(self):
         messages = django_checks.run_checks()
         condition_ids = {m.id for m in messages} & {
             "trusts.E001",
-            "trusts.E002",
-            "trusts.W001",
+            "trusts.E007",
         }
         self.assertEqual(condition_ids, set())
         errors = [m for m in messages if m.level >= django_checks.ERROR]
         self.assertEqual(errors, [])
+
+
+class TrustOwnPublicOutcomeTests(TestCase):
+    """Trust:own is donated at startup; prove it through public outcomes only."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.data = seed_demo()
+        cls.alice = cls.data["users"]["alice"]
+        cls.bob = cls.data["users"]["bob"]
+        cls.dave = cls.data["users"]["dave"]
+        cls.acme = cls.data["trusts"]["acme"]
+        cls.dave_notes = cls.data["trusts"]["dave_notes"]
+        cls.notes = cls.data["projects"]["alice-private-notes"]
+
+    def test_startup_reentry_and_first_party_builder_are_zero_sql(self):
+        handle = zero_config().configured_backend(CANONICAL_BACKEND_PATH)
+        with self.assertNumQueries(0):
+            donate_installed_permission_conditions(handle)
+
+        isolated = TrustsRegistry()
+        with self.assertNumQueries(0):
+            donate_content_permission_conditions(isolated, Trust)
+        self.assertTrue(
+            isolated.evaluate_permission_condition(
+                Trust, "own", self.alice, "trusts.change_trust", self.acme
+            )
+        )
+        self.assertFalse(
+            isolated.evaluate_permission_condition(
+                Trust, "own", self.dave, "trusts.change_trust", self.acme
+            )
+        )
+
+    def test_trust_own_is_registered_at_startup_and_project_has_none(self):
+        alice = User.objects.get(pk=self.alice.pk)
+        # Registered: evaluates fail-closed without a Trust grant, does not raise.
+        self.assertFalse(alice.has_perm("trusts.change_trust:own", self.acme))
+        with self.assertRaises(AttributeError):
+            alice.has_perm("projects.read_project:own", self.notes)
+        with self.assertRaises(AttributeError):
+            list(Project.objects.permitted("read_project:own", alice))
+
+    def test_trust_own_object_and_listing_agree(self):
+        change_trust = Permission.objects.get(
+            content_type=ContentType.objects.get_for_model(Trust),
+            codename="change_trust",
+        )
+        root = Trust.objects.get_root()
+        for user in (self.alice, self.dave):
+            TrustUserPermission.objects.get_or_create(
+                trust=root,
+                entity=user,
+                permission=change_trust,
+            )
+
+        alice = User.objects.get(pk=self.alice.pk)
+        dave = User.objects.get(pk=self.dave.pk)
+        self.assertTrue(alice.has_perm("trusts.change_trust:own", self.acme))
+        self.assertFalse(dave.has_perm("trusts.change_trust:own", self.acme))
+        self.assertTrue(dave.has_perm("trusts.change_trust:own", self.dave_notes))
+        self.assertFalse(alice.has_perm("trusts.change_trust:own", self.dave_notes))
+
+        alice_listed = set(Trust.objects.permitted("change:own", alice))
+        dave_listed = set(Trust.objects.permitted("change:own", dave))
+        alice_evaluated = {
+            row
+            for row in Trust.objects.all()
+            if alice.has_perm("trusts.change_trust:own", row)
+        }
+        dave_evaluated = {
+            row
+            for row in Trust.objects.all()
+            if dave.has_perm("trusts.change_trust:own", row)
+        }
+        self.assertEqual(alice_listed, alice_evaluated)
+        self.assertEqual(dave_listed, dave_evaluated)
+        self.assertIn(self.acme, alice_listed)
+        self.assertNotIn(self.acme, dave_listed)
+        self.assertIn(self.dave_notes, dave_listed)
+        self.assertNotIn(self.dave_notes, alice_listed)
+
+        bob = User.objects.get(pk=self.bob.pk)
+        self.assertFalse(bob.has_perm("trusts.change_trust:own", self.acme))
+        self.assertNotIn(self.acme, Trust.objects.permitted("change:own", bob))

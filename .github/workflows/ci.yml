@@ -27,7 +27,7 @@ jobs:
           python -m pip install -r requirements.txt
           # trusts.zero.__init__ reads AUTH_USER_MODEL; do not import it
           # before Django settings exist. manage.py check proves the import.
-          python -c "from importlib.metadata import version; print('django-trusts', version('django-trusts')); print('django-trusts-zero', version('django-trusts-zero'))"
+          python -c "from importlib.metadata import distribution, version; import json; print('django-trusts', version('django-trusts'), json.loads(distribution('django-trusts').read_text('direct_url.json'))['vcs_info']['commit_id']); print('django-trusts-zero', version('django-trusts-zero'), json.loads(distribution('django-trusts-zero').read_text('direct_url.json'))['vcs_info']['commit_id'])"
       - name: Django system checks
         run: python manage.py check
       - name: Integration tests
@@ -74,7 +74,7 @@ jobs:
           python -m pip install -r requirements.txt
           # trusts.zero.__init__ reads AUTH_USER_MODEL; do not import it
           # before Django settings exist. manage.py check proves the import.
-          python -c "from importlib.metadata import version; print('django-trusts', version('django-trusts')); print('django-trusts-zero', version('django-trusts-zero'))"
+          python -c "from importlib.metadata import distribution, version; import json; print('django-trusts', version('django-trusts'), json.loads(distribution('django-trusts').read_text('direct_url.json'))['vcs_info']['commit_id']); print('django-trusts-zero', version('django-trusts-zero'), json.loads(distribution('django-trusts-zero').read_text('direct_url.json'))['vcs_info']['commit_id'])"
       - name: Django system checks
         run: python manage.py check
       - name: Migrate, seed, and permission query
