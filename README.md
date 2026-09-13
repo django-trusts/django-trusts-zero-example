@@ -91,12 +91,12 @@ the same system check, migration, seed, and authorized-list smoke path.
 
 ## Configuration
 
-The application installs the reviewed #142 pair:
-[django-trusts-zero at `bceb0241b482fdc4f31dd72c7600c52eeb4e6cff`](https://github.com/django-trusts/django-trusts-zero/commit/bceb0241b482fdc4f31dd72c7600c52eeb4e6cff)
-(Z-convert, PR #26) with
-[schema-neutral django-trusts at `710b3ea26778ff069d1f5329adc9f2f481a1ea92`](https://github.com/django-trusts/django-trusts/commit/710b3ea26778ff069d1f5329adc9f2f481a1ea92)
-(Core Stage A, PR #144). The exact compatible revisions are pinned in
-`requirements.txt` and `pyproject.toml`.
+The application installs the #131 pair:
+[django-trusts-zero at `fb32d70e82f6a63d03287eb959732db52bd266c8`](https://github.com/django-trusts/django-trusts-zero/commit/fb32d70e82f6a63d03287eb959732db52bd266c8)
+(Z1, PR #31) with
+[schema-neutral django-trusts at `e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4`](https://github.com/django-trusts/django-trusts/commit/e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4)
+(`handle.register`, PR #158). The exact compatible revisions are pinned in
+`requirements.txt` and `pyproject.toml`. Do not pin a floating branch.
 
 The relevant Django settings are:
 
@@ -112,8 +112,10 @@ AUTHENTICATION_BACKENDS = [
 ]
 ```
 
-`ProjectsConfig.ready()` registers `Project` as a Zero content terminal.
-Zero donates `Trust:own` during startup as a registration-time builder:
+`ProjectsConfig.ready()` donates `Project` through Zero's handle helper
+(`register_zero_content(handle, Project)`). It does not construct `Ref`
+or call `.registry.register`. ZeroConfig donates Trust-as-content and
+`Trust:own` during startup as a registration-time builder:
 
 ```python
 handle.register_permission_condition(
