@@ -18,7 +18,7 @@ from django.forms import modelform_factory
 from django.test import RequestFactory, SimpleTestCase, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
-from trusts.core import TrustsRegistry, any_plan_records
+from trusts.core import BackendHandle, PlanQueryCompiler, TrustsRegistry, any_plan_records
 from trusts.zero.apps import CANONICAL_BACKEND_PATH, zero_config
 from trusts.zero.models import Role, Trust, TrustGroup, TrustGroupPermission, TrustUserPermission
 from trusts.zero.registration import (
@@ -43,8 +43,8 @@ from .query import editable_projects, readable_projects
 User = get_user_model()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CORE_PIN_SHA = "e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4"
-ZERO_PIN_SHA = "fb32d70e82f6a63d03287eb959732db52bd266c8"
+CORE_PIN_SHA = "f5211c11047eb6810680f5d1b13bf34b2c376635"
+ZERO_PIN_SHA = "2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716"
 FORBIDDEN_CONDITION_NODES = frozenset(
     {
         "condition_refs",
@@ -915,8 +915,8 @@ class ZeroInstallAndCheckTests(SimpleTestCase):
         )
 
     def test_project_is_registered_as_zero_content(self):
-        handles = zero_config().configured_handles()
-        self.assertTrue(any_plan_records(handles, Project))
+        backend = zero_config().configured_backend(CANONICAL_BACKEND_PATH)
+        self.assertTrue(any_plan_records((backend,), Project))
 
     def test_legacy_callback_setting_is_unset(self):
         self.assertFalse(
@@ -971,20 +971,25 @@ class TrustOwnPublicOutcomeTests(TestCase):
         cls.notes = cls.data["projects"]["alice-private-notes"]
 
     def test_startup_reentry_and_first_party_builder_are_zero_sql(self):
-        handle = zero_config().configured_backend(CANONICAL_BACKEND_PATH)
+        backend = zero_config().configured_backend(CANONICAL_BACKEND_PATH)
         with self.assertNumQueries(0):
-            donate_installed_permission_conditions(handle)
+            donate_installed_permission_conditions(backend)
 
-        isolated = TrustsRegistry()
+        isolated_store = TrustsRegistry()
+        isolated = BackendHandle(
+            path="tests.isolated",
+            registry=isolated_store,
+            compiler=PlanQueryCompiler(),
+        )
         with self.assertNumQueries(0):
             donate_content_permission_conditions(isolated, Trust)
         self.assertTrue(
-            isolated.evaluate_permission_condition(
+            isolated_store.evaluate_permission_condition(
                 Trust, "own", self.alice, "trusts.change_trust", self.acme
             )
         )
         self.assertFalse(
-            isolated.evaluate_permission_condition(
+            isolated_store.evaluate_permission_condition(
                 Trust, "own", self.dave, "trusts.change_trust", self.acme
             )
         )

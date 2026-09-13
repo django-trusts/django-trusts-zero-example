@@ -91,11 +91,11 @@ the same system check, migration, seed, and authorized-list smoke path.
 
 ## Configuration
 
-The application installs the #131 E1 pair:
-[django-trusts-zero at `fb32d70e82f6a63d03287eb959732db52bd266c8`](https://github.com/django-trusts/django-trusts-zero/commit/fb32d70e82f6a63d03287eb959732db52bd266c8)
-(Z1, merged #31) with
-[schema-neutral django-trusts at `e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4`](https://github.com/django-trusts/django-trusts/commit/e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4)
-(C1, merged #158). The exact compatible revisions are pinned in
+The application installs the #131 E-methods pair:
+[django-trusts-zero at `2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716`](https://github.com/django-trusts/django-trusts-zero/commit/2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716)
+(Z-methods, merged #33) with
+[schema-neutral django-trusts at `f5211c11047eb6810680f5d1b13bf34b2c376635`](https://github.com/django-trusts/django-trusts/commit/f5211c11047eb6810680f5d1b13bf34b2c376635)
+(C-methods, merged #172). The exact compatible revisions are pinned in
 `requirements.txt` and `pyproject.toml`.
 
 The relevant Django settings are:
@@ -113,14 +113,14 @@ AUTHENTICATION_BACKENDS = [
 ```
 
 `ProjectsConfig.ready()` donates `Project` with
-`register_zero_content(handle, Project)`. ZeroConfig owns Trust TUP/TGP
-through `handle.register`. The helper is required because Zero does not
-auto-discover host Content terminals.
+`register_zero_content(backend, Project)`. ZeroConfig owns Trust TUP/TGP
+through `backend.register_relationship`. The helper is required because
+Zero does not auto-discover host Content terminals.
 Zero donates `Trust:own` during startup as a registration-time builder:
 
 ```python
-handle.register_permission_condition(
-    Trust, "own", lambda u, p, o: u == o.settlor,
+backend.add_named_filter(
+    Trust, "own", predicate=lambda u, p, o: u == o.settlor,
 )
 ```
 

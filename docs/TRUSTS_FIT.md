@@ -7,10 +7,10 @@ authorization thesis is complete.
 Example behavior changes are recorded in [migrates.md](../migrates.md).
 django-trusts-zero owns the concrete Trust/Content models, stored
 grants, and `TrustModelBackend`. Schema-neutral django-trusts is the
-library Zero depends on. This example pins the #131 E1 pair: Zero Z1 merge
-`fb32d70e82f6a63d03287eb959732db52bd266c8` with Core C1 merge
-`e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4`. It does not register a
-Project permission condition.
+library Zero depends on. This example pins the #131 E-methods pair: Zero
+Z-methods merge `2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716` with Core
+C-methods merge `f5211c11047eb6810680f5d1b13bf34b2c376635`. It does not
+register a Project permission condition.
 
 Inspected for this revision:
 
@@ -20,8 +20,10 @@ Inspected for this revision:
 | Historical `DJANGO-TRUSTS-8-Edit-Perm-Pages` / PR #1 | `54e83b76fee2e6e950cec94366adec038ebc1260` | Incomplete Project / collaborator UI on Django 1.8 / Python 2. |
 | Example `dev` baseline (pre-#14) | `1e12335821d698b7cd4fcc822addde7c054f7dea` | Alice/Bob demo on Zero PR #20 / core PR #121. |
 | Example `dev` #142 E-convert (#15) | `0cb7ea23708610e467915abd4c2f768b5aece839` | Builders + pair Core `710b3ea` / Zero `bceb024`. |
-| `django-trusts-zero` Z1 (merged #31) | `fb32d70e82f6a63d03287eb959732db52bd266c8` | Handle-API donation; `Trust:own` stays a builder. |
-| `django-trusts` C1 (merged #158) | `e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4` | `handle.register` public AnyPath API. |
+| `django-trusts-zero` Z1 (merged #31) | prior E1 pin | Historical Z1 donation API. |
+| `django-trusts` C1 (merged #158) | prior E1 pin | Historical public AnyPath API. |
+| `django-trusts-zero` Z-methods (merged #33) | `2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716` | Configured-backend donation; `Trust:own` stays a builder. |
+| `django-trusts` C-methods (merged #172) | `f5211c11047eb6810680f5d1b13bf34b2c376635` | `backend.register_relationship` / `backend.add_named_filter`. |
 
 The historical branch is the useful ancestor for *domain shape* (a `Project`
 `Content` subclass, settlor trusts, collaborators, groups). Zero ships
@@ -94,8 +96,8 @@ the TrustGroup local/global intersection.
   during `ZeroConfig.ready()`:
 
   ```python
-  handle.register_permission_condition(
-      Trust, "own", lambda u, p, o: u == o.settlor,
+  backend.add_named_filter(
+      Trust, "own", predicate=lambda u, p, o: u == o.settlor,
   )
   ```
 
