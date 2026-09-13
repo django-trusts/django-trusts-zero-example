@@ -21,8 +21,9 @@ class ProjectsConfig(AppConfig):
 
         from .models import Project
 
-        registry = zero_config().configured_backend(CANONICAL_BACKEND_PATH).registry
+        handle = zero_config().configured_backend(CANONICAL_BACKEND_PATH)
+        registry = handle.registry
         if getattr(self, "_zero_project_registry_id", None) is registry:
             return
-        register_zero_content(registry, Project)
+        register_zero_content(handle, Project)
         self._zero_project_registry_id = registry
