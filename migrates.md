@@ -484,3 +484,108 @@ infrastructure action.
 - Deployment / infrastructure (#7/#13)
 - #137, GH permissions, Windows ACL, unrelated cleanup
 
+# #131 E1: Zero-example on Core C1 + Zero Z1 handle API
+
+This record is the **executable E1 delta** on live `dev`. Historical
+sections above stay as written, including the first Zero split (#11)
+and the #142 E-convert builders pair. Those describe earlier stairs.
+
+Authorization **data**, seeded identities, TrustGroup intersection,
+list/direct agreement, fail-closed anonymous/inactive behavior, fixed
+query bounds, and the no-Python-permission-loop rule are unchanged. No
+Trusts schema migration is added. Repository `master` and tag
+`dev_split_core_attempt_1` stay on the pre-Zero baseline.
+
+## Pin
+
+| | |
+| --- | --- |
+| Previous | Core `710b3ea26778ff069d1f5329adc9f2f481a1ea92` + Zero `bceb0241b482fdc4f31dd72c7600c52eeb4e6cff` (example `dev` `0cb7ea23708610e467915abd4c2f768b5aece839`). |
+| New | Core C1 `e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4` (merged django-trusts#158) **and** Zero Z1 `fb32d70e82f6a63d03287eb959732db52bd266c8` (merged django-trusts-zero#31). |
+| Replacement | Same git URLs, new exact SHAs in `requirements.txt` / `pyproject.toml` / CI pin-integrity tests. No floating branch. |
+| Affected | Package install, host donation call, pin-integrity constants, docs. |
+| Authorization | Same seeded allow/deny. `register_zero_content` still donates Project TUP + both TGP plans; only the helper argument changes. |
+
+## Old → new
+
+```python
+# Old (pre-Z1 helper took a registry; example keyed idempotency on it)
+registry = zero_config().configured_backend(CANONICAL_BACKEND_PATH).registry
+register_zero_content(registry, Project)
+
+# New (Z1 helper takes the configured handle; donation is idempotent)
+handle = zero_config().configured_backend(CANONICAL_BACKEND_PATH)
+register_zero_content(handle, Project)
+```
+
+Do not read `handle.registry` for idempotency or to inspect condition
+records. Keep proving `Trust:own` and Project grants through
+`user.has_perm` and `.permitted()`.
+
+## Changes (example)
+
+### 15. Host donation uses the configured handle
+
+| | |
+| --- | --- |
+| Previous | `ProjectsConfig.ready()` called `register_zero_content(registry, Project)` and stored `handle.registry` for re-entry. |
+| New | `register_zero_content(handle, Project)`. ZeroConfig still owns Trust TUP/TGP via `handle.register`. Z1 donation is idempotent, so the example does not key off `.registry`. |
+| Replacement | Same helper name; argument is the handle. Do not construct `Ref`, call `.registry.register(`, or write `Along(`. |
+| Affected | `projects/apps.py` only. Seed, views, and forms do not register relations. |
+| Authorization | Missing this helper still fail-closes every Project list/object check. |
+
+### 16. Dependency pair is the merged C1 + Z1 heads
+
+| | |
+| --- | --- |
+| Previous | Core Stage A `710b3ea…` + Zero Z-convert `bceb024…`. |
+| New | Exact pair above. Packaged install must resolve those git commits (`direct_url.json`). |
+| Replacement | Same install files; new SHAs. |
+| Affected | `requirements.txt`, `pyproject.toml`, pin-integrity tests, README / TRUSTS_FIT pin lines. |
+| Authorization | Unchanged once the pair is installed. |
+
+## Migration-bot checklist (E1)
+
+Search for:
+
+```text
+710b3ea26778ff069d1f5329adc9f2f481a1ea92
+bceb0241b482fdc4f31dd72c7600c52eeb4e6cff
+register_zero_content(registry
+.registry
+from trusts.core import Ref
+Ref(
+.registry.register(
+Along(
+```
+
+Then:
+
+- [ ] Pin Core `e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4` and Zero `fb32d70e82f6a63d03287eb959732db52bd266c8` in `requirements.txt`, `pyproject.toml`, and `CORE_PIN_SHA` / `ZERO_PIN_SHA`.
+- [ ] Confirm `register_zero_content(handle, Project)` in `ProjectsConfig.ready()`.
+- [ ] Confirm application code does not read `handle.registry` for idempotency or condition-record inspection.
+- [ ] Keep existing `has_perm` / `.permitted()` Trust:own and Project proofs.
+- [ ] Keep `dev` in push CI. Do not rewrite `master` or `dev_split_core_attempt_1`.
+- [ ] `python manage.py check` clean of `trusts.E001` / `trusts.E007`.
+- [ ] `python manage.py test projects` on Python 3.12–3.14.
+- [ ] Fresh `migrate --noinput` + `seed_demo` (no new Trusts schema).
+- [ ] `collectstatic` + admin static fetch.
+- [ ] MySQL 8 smoke against the exact pair.
+- [ ] Do **not** Dokku-deploy this revision.
+- [ ] Do not start G1, C1-fold, W1, C2, #146, #159/#160, or release/version work.
+
+## Deployment / migration checklist (example)
+
+Do **not** Dokku-deploy this E1 revision. After Chat review, a later
+redeploy from `dev` can follow (no new Trusts schema).
+
+- [ ] Install Core at `e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4` and Zero at `fb32d70e82f6a63d03287eb959732db52bd266c8`.
+- [ ] `python manage.py check` (must be clean of `trusts.E001` / `trusts.E007`).
+- [ ] `python manage.py migrate --noinput` (no new Trusts migration expected).
+- [ ] `python manage.py seed_demo` only if the database is new or local TrustGroup rows are missing.
+- [ ] `python manage.py test projects`
+- [ ] Keep `AUTHENTICATION_BACKENDS` as `trusts.zero.backends.TrustModelBackend`.
+- [ ] Do not set `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`.
+- [ ] Set `CSRF_TRUSTED_ORIGINS` on HTTPS deploys (unchanged).
+
+

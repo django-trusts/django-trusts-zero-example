@@ -1,10 +1,9 @@
-# Python >=3.12, Django 6.1.x — paired Zero + schema-neutral core.
-# Pin the reviewed #142 pair: Core Stage A (PR #144) and Zero Z-convert
-# (PR #26). Unpinned django-trusts resolves to PyPI 0.10.x. Do not pin
-# the pre-split core commit 8916a76.
+# Python >=3.12, Django 6.1.x — exact #131 E1 pair.
+# Core C1 (merged #158) + Zero Z1 (merged #31). Unpinned django-trusts
+# resolves to PyPI 0.10.x. No floating branch.
 Django>=6.1,<6.2
-django-trusts @ git+https://github.com/django-trusts/django-trusts.git@710b3ea26778ff069d1f5329adc9f2f481a1ea92
-django-trusts-zero @ git+https://github.com/django-trusts/django-trusts-zero.git@bceb0241b482fdc4f31dd72c7600c52eeb4e6cff
+django-trusts @ git+https://github.com/django-trusts/django-trusts.git@e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4
+django-trusts-zero @ git+https://github.com/django-trusts/django-trusts-zero.git@fb32d70e82f6a63d03287eb959732db52bd266c8
 gunicorn>=23.0.0
 # Pure-Python driver: mysqlclient has no Linux wheels and needs client headers
 # the stock Herokuish Python buildpack does not provide.

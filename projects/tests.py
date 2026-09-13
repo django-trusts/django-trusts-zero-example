@@ -43,8 +43,8 @@ from .query import editable_projects, readable_projects
 User = get_user_model()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CORE_PIN_SHA = "710b3ea26778ff069d1f5329adc9f2f481a1ea92"
-ZERO_PIN_SHA = "bceb0241b482fdc4f31dd72c7600c52eeb4e6cff"
+CORE_PIN_SHA = "e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4"
+ZERO_PIN_SHA = "fb32d70e82f6a63d03287eb959732db52bd266c8"
 FORBIDDEN_CONDITION_NODES = frozenset(
     {
         "condition_refs",

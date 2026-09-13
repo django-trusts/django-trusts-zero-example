@@ -7,9 +7,9 @@ authorization thesis is complete.
 Example behavior changes are recorded in [migrates.md](../migrates.md).
 django-trusts-zero owns the concrete Trust/Content models, stored
 grants, and `TrustModelBackend`. Schema-neutral django-trusts is the
-library Zero depends on. This example pins Zero Z-convert PR #26 merge
-`bceb0241b482fdc4f31dd72c7600c52eeb4e6cff` with Core Stage A PR #144
-merge `710b3ea26778ff069d1f5329adc9f2f481a1ea92`. It does not register a
+library Zero depends on. This example pins the #131 E1 pair: Zero Z1 merge
+`fb32d70e82f6a63d03287eb959732db52bd266c8` with Core C1 merge
+`e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4`. It does not register a
 Project permission condition.
 
 Inspected for this revision:
@@ -19,8 +19,9 @@ Inspected for this revision:
 | `django-trusts-example` default `master` | pre-#5 | Demo against Trusts post-#19; group attach implied access. |
 | Historical `DJANGO-TRUSTS-8-Edit-Perm-Pages` / PR #1 | `54e83b76fee2e6e950cec94366adec038ebc1260` | Incomplete Project / collaborator UI on Django 1.8 / Python 2. |
 | Example `dev` baseline (pre-#14) | `1e12335821d698b7cd4fcc822addde7c054f7dea` | Alice/Bob demo on Zero PR #20 / core PR #121. |
-| `django-trusts-zero` (PR #26 merge) | `bceb0241b482fdc4f31dd72c7600c52eeb4e6cff` | Z-convert: `Trust:own` is a donated builder. |
-| `django-trusts` (PR #144 merge) | `710b3ea26778ff069d1f5329adc9f2f481a1ea92` | Core Stage A: registration-time builders. |
+| Example `dev` #142 E-convert (#15) | `0cb7ea23708610e467915abd4c2f768b5aece839` | Builders + pair Core `710b3ea` / Zero `bceb024`. |
+| `django-trusts-zero` Z1 (merged #31) | `fb32d70e82f6a63d03287eb959732db52bd266c8` | Handle-API donation; `Trust:own` stays a builder. |
+| `django-trusts` C1 (merged #158) | `e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4` | `handle.register` public AnyPath API. |
 
 The historical branch is the useful ancestor for *domain shape* (a `Project`
 `Content` subclass, settlor trusts, collaborators, groups). Zero ships
