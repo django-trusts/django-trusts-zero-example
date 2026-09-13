@@ -43,8 +43,8 @@ from .query import editable_projects, readable_projects
 User = get_user_model()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CORE_PIN_SHA = "710b3ea26778ff069d1f5329adc9f2f481a1ea92"
-ZERO_PIN_SHA = "bceb0241b482fdc4f31dd72c7600c52eeb4e6cff"
+CORE_PIN_SHA = "e9fd4cd4f77624f3d5351b505808c1d6fa8bcbc4"
+ZERO_PIN_SHA = "fb32d70e82f6a63d03287eb959732db52bd266c8"
 FORBIDDEN_CONDITION_NODES = frozenset(
     {
         "condition_refs",
@@ -945,6 +945,29 @@ class ZeroInstallAndCheckTests(SimpleTestCase):
                         if alias.name in FORBIDDEN_CONDITION_NODES or alias.name == "*":
                             imported.append(f"{path.relative_to(REPO_ROOT)}:{alias.name}")
         self.assertEqual(imported, [])
+
+    def test_application_and_docs_do_not_use_ref_or_registry_register(self):
+        forbidden = (
+            "from trusts.core import Ref",
+            ".registry.register(",
+            ".registry.register_strategy(",
+            "Along(",
+        )
+        offenders = []
+        for path in _application_python_files():
+            text = path.read_text()
+            for needle in forbidden:
+                if needle in text:
+                    offenders.append("%s: %s" % (path.relative_to(REPO_ROOT), needle))
+        for rel in ("README.md", "docs/TRUSTS_FIT.md"):
+            text = (REPO_ROOT / rel).read_text()
+            for needle in forbidden:
+                if needle in text:
+                    offenders.append("%s: %s" % (rel, needle))
+        apps = (REPO_ROOT / "projects" / "apps.py").read_text()
+        self.assertIn("register_zero_content(handle, Project)", apps)
+        self.assertNotIn("register_zero_content(registry, Project)", apps)
+        self.assertEqual(offenders, [])
 
     def test_system_checks_have_no_trusts_condition_errors(self):
         messages = django_checks.run_checks()
