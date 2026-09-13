@@ -14,15 +14,13 @@ class ProjectsConfig(AppConfig):
         """Donate Project as a Zero content terminal (TUP + both TGP plans).
 
         ZeroConfig registers Trust-as-content only. Host Content subclasses
-        must call register_zero_content or permitted()/has_perm stay empty.
+        must call register_zero_content(handle, Model) or permitted()/has_perm
+        stay empty. Z1 donation is idempotent; do not key off handle.registry.
         """
         from trusts.zero.apps import CANONICAL_BACKEND_PATH, zero_config
         from trusts.zero.registration import register_zero_content
 
         from .models import Project
 
-        registry = zero_config().configured_backend(CANONICAL_BACKEND_PATH).registry
-        if getattr(self, "_zero_project_registry_id", None) is registry:
-            return
-        register_zero_content(registry, Project)
-        self._zero_project_registry_id = registry
+        handle = zero_config().configured_backend(CANONICAL_BACKEND_PATH)
+        register_zero_content(handle, Project)
