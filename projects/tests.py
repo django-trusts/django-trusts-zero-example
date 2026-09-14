@@ -351,9 +351,9 @@ class PaginationAndQueryTests(TestCase):
         dave = User.objects.get(username="dave")
         self.assertTrue(dave.has_perm("projects.read_project", changelog))
         # Trust :own is a donated builder. Project does not register one;
-        # public read is a group row, not a condition code.
-        with self.assertRaises(AttributeError):
-            dave.has_perm("projects.read_project:own", changelog)
+        # public read is a group row, not a condition code. C2 has_perm
+        # fail-closes an unknown Project :own instead of raising.
+        self.assertFalse(dave.has_perm("projects.read_project:own", changelog))
         self.assertFalse(dave.has_perm("projects.change_project", changelog))
 
 
@@ -1020,8 +1020,8 @@ class TrustOwnPublicOutcomeTests(TestCase):
         alice = User.objects.get(pk=self.alice.pk)
         # Registered: evaluates fail-closed without a Trust grant, does not raise.
         self.assertFalse(alice.has_perm("trusts.change_trust:own", self.acme))
-        with self.assertRaises(AttributeError):
-            alice.has_perm("projects.read_project:own", self.notes)
+        # Unregistered Project :own: C2 has_perm fail-closes; queryset still raises.
+        self.assertFalse(alice.has_perm("projects.read_project:own", self.notes))
         with self.assertRaises(AttributeError):
             list(Project.objects.permitted("read_project:own", alice))
 
