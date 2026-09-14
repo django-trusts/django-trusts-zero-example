@@ -12,7 +12,7 @@ from trusts.zero.authorization import (
     disassociate_group_from_trust,
     set_trust_group_permissions,
 )
-from trusts.decorators import permission_required, K
+from trusts.zero.decorators import permission_required, K
 
 from .create import create_owned_project
 from .forms import AssociateTeamForm, GrantForm, ProjectForm, VisibilityForm
