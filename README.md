@@ -91,9 +91,10 @@ the same system check, migration, seed, and authorized-list smoke path.
 
 ## Configuration
 
-The application installs the #131 E-methods pair:
-[django-trusts-zero at `2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716`](https://github.com/django-trusts/django-trusts-zero/commit/2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716)
-(Z-methods, merged #33) with
+The application keeps the #131 E-methods Core pin and advances Zero to
+the merged #191 decorator-family revision:
+[django-trusts-zero at `517307170f954f187da78c56e236ec1779c46e29`](https://github.com/django-trusts/django-trusts-zero/commit/517307170f954f187da78c56e236ec1779c46e29)
+(legacy request family, merged #36; includes Z-methods #33) with
 [schema-neutral django-trusts at `f5211c11047eb6810680f5d1b13bf34b2c376635`](https://github.com/django-trusts/django-trusts/commit/f5211c11047eb6810680f5d1b13bf34b2c376635)
 (C-methods, merged #172). The exact compatible revisions are pinned in
 `requirements.txt` and `pyproject.toml`.
@@ -128,9 +129,10 @@ Core invokes that callable once with symbolic refs, stores only the
 normalized predicate, and never runs it during `has_perm` or
 `.permitted()`. This example does not register a Project condition and
 does not import `condition_refs`, `Expr`, or other Core condition-node
-constructors. The concrete Trust, Content, stored-grant, and
-authorization-helper APIs live under `trusts.zero.*`; view guards come
-from schema-neutral core.
+constructors. The concrete Trust, Content, stored-grant,
+authorization-helper, and legacy request-decorator APIs live under
+`trusts.zero.*`. View guards import `permission_required` and `K` from
+`trusts.zero.decorators`.
 
 ## Deploy on Dokku
 
