@@ -44,7 +44,7 @@ User = get_user_model()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CORE_PIN_SHA = "f5211c11047eb6810680f5d1b13bf34b2c376635"
-ZERO_PIN_SHA = "2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716"
+ZERO_PIN_SHA = "517307170f954f187da78c56e236ec1779c46e29"
 FORBIDDEN_CONDITION_NODES = frozenset(
     {
         "condition_refs",
@@ -931,6 +931,28 @@ class ZeroInstallAndCheckTests(SimpleTestCase):
         self.assertIn(ZERO_PIN_SHA, pyproject)
         self.assertEqual(_installed_vcs_commit("django-trusts"), CORE_PIN_SHA)
         self.assertEqual(_installed_vcs_commit("django-trusts-zero"), ZERO_PIN_SHA)
+
+    def test_application_modules_import_zero_decorators_not_core(self):
+        from projects import views
+        from trusts.zero.decorators import K, permission_required
+
+        imported_core = []
+        imported_zero = []
+        for path in _application_python_files():
+            tree = ast.parse(path.read_text(), filename=str(path))
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.ImportFrom):
+                    continue
+                names = [alias.name for alias in node.names or []]
+                if node.module == "trusts.decorators":
+                    imported_core.append(f"{path.relative_to(REPO_ROOT)}:{','.join(names)}")
+                if node.module == "trusts.zero.decorators":
+                    imported_zero.append(f"{path.relative_to(REPO_ROOT)}:{','.join(names)}")
+        self.assertEqual(imported_core, [])
+        self.assertEqual(imported_zero, ["projects/views.py:permission_required,K"])
+        self.assertIs(views.permission_required, permission_required)
+        self.assertIs(views.K, K)
+        self.assertFalse(hasattr(views, "authorization_required"))
 
     def test_application_modules_do_not_import_core_condition_nodes(self):
         imported = []

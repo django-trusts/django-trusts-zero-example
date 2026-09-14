@@ -7,8 +7,9 @@ authorization thesis is complete.
 Example behavior changes are recorded in [migrates.md](../migrates.md).
 django-trusts-zero owns the concrete Trust/Content models, stored
 grants, and `TrustModelBackend`. Schema-neutral django-trusts is the
-library Zero depends on. This example pins the #131 E-methods pair: Zero
-Z-methods merge `2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716` with Core
+library Zero depends on. This example keeps the #131 E-methods Core pin
+and advances Zero to the merged #191 decorator-family revision: Zero
+`517307170f954f187da78c56e236ec1779c46e29` (merged #36) with Core
 C-methods merge `f5211c11047eb6810680f5d1b13bf34b2c376635`. It does not
 register a Project permission condition.
 
@@ -24,6 +25,7 @@ Inspected for this revision:
 | `django-trusts` C1 (merged #158) | prior E1 pin | Historical public AnyPath API. |
 | `django-trusts-zero` Z-methods (merged #33) | `2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716` | Configured-backend donation; `Trust:own` stays a builder. |
 | `django-trusts` C-methods (merged #172) | `f5211c11047eb6810680f5d1b13bf34b2c376635` | `backend.register_relationship` / `backend.add_named_filter`. |
+| `django-trusts-zero` #191 leg 1 (merged #36) | `517307170f954f187da78c56e236ec1779c46e29` | Legacy request family on `trusts.zero.decorators`. |
 
 The historical branch is the useful ancestor for *domain shape* (a `Project`
 `Content` subclass, settlor trusts, collaborators, groups). Zero ships
@@ -51,7 +53,7 @@ the TrustGroup local/global intersection.
 - Team mutations via `trusts.zero.authorization` (`associate_group_with_trust`,
   `set_trust_group_permissions`, `disassociate_group_from_trust`). Writes
   outside the ceiling raise `AuthorizationDenied` and do not mutate.
-- View guards via `trusts.decorators.permission_required` and `K()`.
+- View guards via `trusts.zero.decorators.permission_required` and `K()`.
 - Cross-organization isolation: Dave's notes are on Dave's trust; Alice's
   grants do not leak.
 - Same team, different projects: `acme-staff` has `change` on Acme Playbook
