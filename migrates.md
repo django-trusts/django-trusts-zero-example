@@ -714,4 +714,104 @@ the operator/browser proof.
 - [ ] Do not set `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`.
 - [ ] Set `CSRF_TRUSTED_ORIGINS` on HTTPS deploys (unchanged).
 
+# #191: import Zero's relocated decorator family
+
+This record is the **executable Example #191 delta** on live `dev`.
+Historical sections above stay as written. Authorization **data**, seeded
+identities, TrustGroup intersection, list/direct agreement, fail-closed
+anonymous/inactive behavior, fixed query bounds, and the no-Python-permission-loop
+rule are unchanged. Views are not redesigned. Core
+`authorization_required` is not adopted. No Trusts schema migration is
+added. Repository `master` and tag `dev_split_core_attempt_1` stay on
+the pre-Zero baseline.
+
+## Pin
+
+| | |
+| --- | --- |
+| Previous | Core C-methods `f5211c11047eb6810680f5d1b13bf34b2c376635` + Zero Z-methods `2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716` (example `dev` `ac62897da26b493356cc149154d878018ee6a5fb`). |
+| New | Same Core C-methods pin **and** Zero #191 relocation `517307170f954f187da78c56e236ec1779c46e29` (merged django-trusts-zero#36). |
+| Replacement | Same git URLs, new Zero SHA in `requirements.txt` / `pyproject.toml` / CI pin-integrity tests. No floating branch. |
+| Affected | Package install, production view import, pin-integrity constants, docs. |
+| Authorization | Same seeded allow/deny. Decorator behavior is the relocated Zero copy of Core's current legacy family. |
+
+## Old → new
+
+```python
+# Old (Example production views imported Core's compatibility family)
+from trusts.decorators import permission_required, K
+
+# New (Zero owns the public compatibility surface after #36)
+from trusts.zero.decorators import permission_required, K
+```
+
+Do not replace these guards with Core `authorization_required`. Do not
+redesign view signatures, `K("pk")` extraction, or permission codes.
+
+## Changes (example)
+
+### 19. Production views import Zero decorators
+
+| | |
+| --- | --- |
+| Previous | `projects/views.py` imported `permission_required` and `K` from `trusts.decorators`. |
+| New | Same names and decorator usage from `trusts.zero.decorators`. |
+| Replacement | Import path only. View bodies, permission codes, and `K("pk")` stay. |
+| Affected | `projects/views.py`, README / TRUSTS_FIT, import-path test. |
+| Authorization | Unchanged once Zero `51730717…` is installed. |
+
+### 20. Dependency pair pins merged Zero #36
+
+| | |
+| --- | --- |
+| Previous | Core `f5211c1…` + Zero `2e3ccce…`. |
+| New | Core `f5211c1…` + Zero `51730717…`. Packaged install must resolve those git commits (`direct_url.json`). |
+| Replacement | Same install files; new Zero SHA. |
+| Affected | `requirements.txt`, `pyproject.toml`, pin-integrity tests, README / TRUSTS_FIT pin lines. |
+| Authorization | Unchanged once the pair is installed. |
+
+## Migration-bot checklist (#191 Example)
+
+Search active code and docs (not the labeled historical stairs above) for:
+
+```text
+2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716
+from trusts.decorators import
+trusts.decorators.permission_required
+```
+
+Historical `migrates.md` stairs may still mention the old path. Active
+application modules must not.
+
+Then:
+
+- [ ] Pin Core `f5211c11047eb6810680f5d1b13bf34b2c376635` and Zero `517307170f954f187da78c56e236ec1779c46e29` in `requirements.txt`, `pyproject.toml`, and `CORE_PIN_SHA` / `ZERO_PIN_SHA`.
+- [ ] Confirm `projects/views.py` imports `permission_required` and `K` from `trusts.zero.decorators`.
+- [ ] Confirm application modules do not import `trusts.decorators`.
+- [ ] Keep existing `has_perm` / `.permitted()` Trust:own and Project proofs.
+- [ ] Keep `permission_required` + `K("pk")`. Do not adopt Core `authorization_required`.
+- [ ] Keep `dev` in push CI. Do not rewrite `master` or `dev_split_core_attempt_1`.
+- [ ] `python manage.py check` clean of `trusts.E001` / `trusts.E007`.
+- [ ] `python manage.py test projects` on Python 3.12–3.14.
+- [ ] Fresh `migrate --noinput` + `seed_demo` (no new Trusts schema).
+- [ ] `collectstatic` + admin static fetch.
+- [ ] MySQL 8 smoke against the exact pair.
+- [ ] Do **not** Dokku-deploy this revision.
+- [ ] Do not start Core #191 removal, #7, GH implementation, Windows ACL, schema/data changes, decorator redesign, or release/version work.
+
+## Deployment / migration checklist (example)
+
+Do **not** Dokku-deploy this #191 Example revision. After Chat review, a
+later redeploy from `dev` can follow (no new Trusts schema). Issue #7
+remains the operator/browser proof. Core removal stays blocked until
+this Example leg is reviewed and merged.
+
+- [ ] Install Core at `f5211c11047eb6810680f5d1b13bf34b2c376635` and Zero at `517307170f954f187da78c56e236ec1779c46e29`.
+- [ ] `python manage.py check` (must be clean of `trusts.E001` / `trusts.E007`).
+- [ ] `python manage.py migrate --noinput` (no new Trusts migration expected).
+- [ ] `python manage.py seed_demo` only if the database is new or local TrustGroup rows are missing.
+- [ ] `python manage.py test projects`
+- [ ] Keep `AUTHENTICATION_BACKENDS` as `trusts.zero.backends.TrustModelBackend`.
+- [ ] Do not set `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`.
+- [ ] Set `CSRF_TRUSTED_ORIGINS` on HTTPS deploys (unchanged).
 
