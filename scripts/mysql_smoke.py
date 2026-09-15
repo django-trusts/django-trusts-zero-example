@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Fresh MySQL seed + Trusts list-filter check (CI mysql-smoke job)."""
+"""Fresh MySQL seed + Zero list-filter check (CI mysql-smoke job)."""
 
 import os
 import sys

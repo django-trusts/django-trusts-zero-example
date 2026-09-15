@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.utils.text import slugify
 
-from trusts.models import Role, Trust
+from trusts.zero.models import Role, Trust
 
 from .grants import (
     CHANGE,

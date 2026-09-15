@@ -2,7 +2,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
 
-from trusts.models import Content
+from trusts.zero.models import Content
 
 
 class Project(Content):

@@ -1,6 +1,6 @@
 {
   "name": "django-trusts-example",
-  "description": "Demo Django app for django-trusts on Dokku with MySQL 8",
+  "description": "Demo Django app for django-trusts-zero on Dokku with MySQL 8",
   "scripts": {
     "dokku": {
       "predeploy": "python manage.py collectstatic --noinput --skip-checks"

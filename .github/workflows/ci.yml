@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, dev]
   pull_request:
 
 permissions:
@@ -21,10 +21,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Django 6.1 and Trusts at 8916a76
+      - name: Install Django 6.1 and paired Zero/core
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
+          # trusts.zero.__init__ reads AUTH_USER_MODEL; do not import it
+          # before Django settings exist. manage.py check proves the import.
+          python -c "from importlib.metadata import distribution, version; import json; print('django-trusts', version('django-trusts'), json.loads(distribution('django-trusts').read_text('direct_url.json'))['vcs_info']['commit_id']); print('django-trusts-zero', version('django-trusts-zero'), json.loads(distribution('django-trusts-zero').read_text('direct_url.json'))['vcs_info']['commit_id'])"
       - name: Django system checks
         run: python manage.py check
       - name: Integration tests
@@ -65,10 +68,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install Django 6.1 and Trusts at 8916a76
+      - name: Install Django 6.1 and paired Zero/core
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
+          # trusts.zero.__init__ reads AUTH_USER_MODEL; do not import it
+          # before Django settings exist. manage.py check proves the import.
+          python -c "from importlib.metadata import distribution, version; import json; print('django-trusts', version('django-trusts'), json.loads(distribution('django-trusts').read_text('direct_url.json'))['vcs_info']['commit_id']); print('django-trusts-zero', version('django-trusts-zero'), json.loads(distribution('django-trusts-zero').read_text('direct_url.json'))['vcs_info']['commit_id'])"
       - name: Django system checks
         run: python manage.py check
       - name: Migrate, seed, and permission query

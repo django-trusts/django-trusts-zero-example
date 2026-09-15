@@ -1,6 +1,6 @@
-"""Declarative list filters against Trusts relational tables.
+"""Declarative list filters against Zero relational tables.
 
-``Project.objects.permitted`` is the core SQL filter: trustee grants or the
+``Project.objects.permitted`` is the Zero SQL filter: trustee grants or the
 TrustGroup local/global intersection (same tables ``has_perm`` reads).
 Pagination must wrap the returned QuerySet, not the unfiltered table.
 """

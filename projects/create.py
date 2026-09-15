@@ -3,7 +3,7 @@
 from django.db import transaction
 from django.utils.text import slugify
 
-from trusts.models import Trust
+from trusts.zero.models import Trust
 
 from .grants import CHANGE, READ, grant_user
 from .models import Project

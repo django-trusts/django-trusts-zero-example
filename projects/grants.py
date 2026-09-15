@@ -1,12 +1,12 @@
-"""Application helpers around Trusts tables.
+"""Application helpers around Zero tables.
 
-Trustee writes still go through TrustUserPermission (Content.grant / revoke).
-Group-derived access uses the TrustGroup local/global intersection from
-django-trusts #23: association alone grants nothing; local TrustGroup
+Trustee writes are explicit TrustUserPermission rows (Content.grant /
+revoke are gone). Group-derived access uses the TrustGroup local/global
+intersection: association alone grants nothing; local TrustGroup
 permissions must also sit inside Group.permissions (the global ceiling).
 
 public-readers is a system-maintained audience: every User row is kept in
-that group so Trusts can grant public read through ordinary group membership.
+that group so Zero can grant public read through ordinary group membership.
 Forms and admin must not be able to drop it; see signals and UserAdmin.
 Public visibility still associates that group, then enables local read.
 """
@@ -18,9 +18,12 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.utils import OperationalError, ProgrammingError
 
-from trusts.models import (
+from trusts.zero.models import (
     TrustGroup,
+    TrustGroupPermission,
     TrustUserPermission,
+)
+from trusts.zero.policy import (
     get_group_global_ceiling,
     permission_in_global_ceiling,
 )
@@ -52,18 +55,23 @@ def project_content_type():
 
 
 def grant_user(project, user, *codenames):
-    """Grant trustee rows on the project's trust (object-level via Trusts)."""
+    """Grant trustee rows on the project's trust (explicit TUP writes)."""
     for codename in codenames:
-        project.grant(codename, user)
+        TrustUserPermission.objects.get_or_create(
+            trust=project.trust,
+            entity=user,
+            permission=project_permission(codename),
+        )
 
 
 def revoke_user(project, user, *codenames):
     """Remove trustee rows. Empty codenames removes every grant for the user."""
+    qs = TrustUserPermission.objects.filter(trust=project.trust, entity=user)
     if not codenames:
-        project.revoke(None, user)
+        qs.delete()
         return
     for codename in codenames:
-        project.revoke(codename, user)
+        qs.filter(permission=project_permission(codename)).delete()
 
 
 def public_readers_group():
@@ -131,15 +139,23 @@ def set_public(project, make_public):
     """
     group = public_readers_group()
     if make_public:
-        project.trust.grant_group_permission(group, project_permission(READ))
+        tg, _ = TrustGroup.objects.get_or_create(trust=project.trust, group=group)
+        TrustGroupPermission.objects.get_or_create(
+            trustgroup=tg,
+            permission=project_permission(READ),
+        )
     else:
         project.trust.groups.remove(group)
 
 
 def grant_local_group_permission(project, group, *codenames):
     """Enable local TrustGroup grants. Permission instances must be in the ceiling."""
+    tg, _ = TrustGroup.objects.get_or_create(trust=project.trust, group=group)
     for codename in codenames:
-        project.trust.grant_group_permission(group, project_permission(codename))
+        TrustGroupPermission.objects.get_or_create(
+            trustgroup=tg,
+            permission=project_permission(codename),
+        )
 
 
 def trustee_rows(project):

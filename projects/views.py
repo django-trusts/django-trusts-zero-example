@@ -6,13 +6,13 @@ from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 
-from trusts.authorization import (
+from trusts.zero.authorization import (
     AuthorizationDenied,
     associate_group_with_trust,
     disassociate_group_from_trust,
     set_trust_group_permissions,
 )
-from trusts.decorators import permission_required, K
+from trusts.zero.decorators import permission_required, K
 
 from .create import create_owned_project
 from .forms import AssociateTeamForm, GrantForm, ProjectForm, VisibilityForm
