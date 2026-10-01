@@ -43,8 +43,8 @@ from .query import editable_projects, readable_projects
 User = get_user_model()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CORE_PIN_SHA = "f5211c11047eb6810680f5d1b13bf34b2c376635"
-ZERO_PIN_SHA = "517307170f954f187da78c56e236ec1779c46e29"
+CORE_PIN_SHA = "781a33dfc46fa3ba10a5e8b634de2d47780e857b"
+ZERO_PIN_SHA = "3184479ade417c57307c3e18b6c0289347a05687"
 FORBIDDEN_CONDITION_NODES = frozenset(
     {
         "condition_refs",
@@ -350,10 +350,10 @@ class PaginationAndQueryTests(TestCase):
         self.assertTrue(is_public(changelog))
         dave = User.objects.get(username="dave")
         self.assertTrue(dave.has_perm("projects.read_project", changelog))
-        # Trust :own is a donated builder. Project does not register one;
-        # public read is a group row, not a condition code.
-        with self.assertRaises(AttributeError):
-            dave.has_perm("projects.read_project:own", changelog)
+        # Trust :own is a donated builder. Project does not register one.
+        # Instance has_perm fail-closes an unknown local name. Public
+        # read is a group row, not a condition code.
+        self.assertFalse(dave.has_perm("projects.read_project:own", changelog))
         self.assertFalse(dave.has_perm("projects.change_project", changelog))
 
 
@@ -1020,8 +1020,10 @@ class TrustOwnPublicOutcomeTests(TestCase):
         alice = User.objects.get(pk=self.alice.pk)
         # Registered: evaluates fail-closed without a Trust grant, does not raise.
         self.assertFalse(alice.has_perm("trusts.change_trust:own", self.acme))
-        with self.assertRaises(AttributeError):
-            alice.has_perm("projects.read_project:own", self.notes)
+        # Unknown local name: instance has_perm is a non-match. The
+        # queryset compiler still raises, so list and object checks
+        # disagree for a code this model did not register.
+        self.assertFalse(alice.has_perm("projects.read_project:own", self.notes))
         with self.assertRaises(AttributeError):
             list(Project.objects.permitted("read_project:own", alice))
 
