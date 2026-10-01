@@ -83,12 +83,21 @@ TEMPLATES = [
 WSGI_APPLICATION = "example.wsgi.application"
 
 # DATABASE_URL (dokku-mysql) when set; otherwise local SQLite.
+# The committed policy lock is one dialect. `policy` stays SQLite so
+# render and trusts.E009 do not follow `default` when CI or Dokku
+# points that alias at MySQL. Both CI jobs set TRUSTS_POLICY_DATABASE.
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
-    )
+    ),
+    "policy": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": ":memory:",
+    },
 }
+
+TRUSTS_POLICY_DATABASE = os.environ.get("TRUSTS_POLICY_DATABASE", "policy")
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"

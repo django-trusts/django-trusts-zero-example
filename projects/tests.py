@@ -973,10 +973,31 @@ class ZeroInstallAndCheckTests(SimpleTestCase):
         condition_ids = {m.id for m in messages} & {
             "trusts.E001",
             "trusts.E007",
+            "trusts.E009",
         }
         self.assertEqual(condition_ids, set())
         errors = [m for m in messages if m.level >= django_checks.ERROR]
         self.assertEqual(errors, [])
+
+    def test_policy_lock_matches_pinned_sqlite_alias(self):
+        from trusts.policy_lock import render_policy_sql_bytes, resolve_lockfile_path
+
+        alias = settings.TRUSTS_POLICY_DATABASE
+        self.assertEqual(alias, "policy")
+        self.assertEqual(
+            settings.DATABASES[alias]["ENGINE"],
+            "django.db.backends.sqlite3",
+        )
+        self.assertIsNone(getattr(settings, "TRUSTS_POLICY_LOCKFILE", None))
+        location = resolve_lockfile_path()
+        self.assertFalse(location.explicit)
+        self.assertEqual(location.path.name, "trusts-policy.lock.yaml")
+        committed = location.path.read_bytes()
+        first = render_policy_sql_bytes()
+        second = render_policy_sql_bytes()
+        self.assertEqual(first, second)
+        self.assertEqual(committed, first)
+        self.assertIn(b'\n  engine: "django.db.backends.sqlite3"\n', committed)
 
 
 class TrustOwnPublicOutcomeTests(TestCase):

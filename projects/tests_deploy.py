@@ -127,3 +127,53 @@ print("mysql-backend-ok", Database.version_info, Database.__version__)
             f"stdout={result.stdout!r}\nstderr={result.stderr!r}",
         )
         self.assertIn("mysql-backend-ok", result.stdout)
+
+    def test_mysql_default_keeps_policy_alias_on_sqlite(self):
+        """Dokku/CI may point default at MySQL. E009 stays on `policy`."""
+        env = os.environ.copy()
+        env["DATABASE_URL"] = "mysql://demo:s3cret@127.0.0.1:3306/unused"
+        env["TRUSTS_POLICY_DATABASE"] = "policy"
+        env["DJANGO_SETTINGS_MODULE"] = "example.settings"
+        env["PYTHONPATH"] = os.pathsep.join(
+            [str(REPO_ROOT), env.get("PYTHONPATH", "")]
+        )
+        code = """
+import django
+from django.conf import settings
+from django.core import checks
+from trusts.policy_lock import render_policy_sql_bytes, resolve_lockfile_path
+
+django.setup()
+alias = settings.TRUSTS_POLICY_DATABASE
+if settings.DATABASES["default"]["ENGINE"] != "django.db.backends.mysql":
+    raise SystemExit("default engine is not mysql")
+if alias != "policy":
+    raise SystemExit(f"policy alias is {alias!r}")
+if settings.DATABASES[alias]["ENGINE"] != "django.db.backends.sqlite3":
+    raise SystemExit("policy engine is not sqlite")
+# Limit model checks to the pinned alias. Plain check also visits
+# default, which needs a live MySQL server; CI has one, this test does not.
+messages = checks.run_checks(databases=[alias])
+errors = [m for m in messages if m.level >= checks.ERROR]
+if errors:
+    raise SystemExit("\\n".join(f"{m.id}: {m.msg}" for m in errors))
+committed = resolve_lockfile_path().path.read_bytes()
+rendered = render_policy_sql_bytes()
+if rendered != committed:
+    raise SystemExit("policy lock bytes differ from the pinned alias")
+print("policy-pin-ok", alias, settings.DATABASES[alias]["ENGINE"])
+"""
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            cwd=REPO_ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            f"stdout={result.stdout!r}\nstderr={result.stderr!r}",
+        )
+        self.assertIn("policy-pin-ok policy django.db.backends.sqlite3", result.stdout)
