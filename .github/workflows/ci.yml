@@ -16,6 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.12", "3.13", "3.14"]
+    env:
+      # Same alias as the MySQL job so trusts.E009 renders one dialect.
+      TRUSTS_POLICY_DATABASE: policy
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -63,6 +66,8 @@ jobs:
           --health-retries=12
     env:
       DATABASE_URL: mysql://demo:demo@127.0.0.1:3306/example
+      # Runtime stays on MySQL. E009 stays on the SQLite policy alias.
+      TRUSTS_POLICY_DATABASE: policy
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
