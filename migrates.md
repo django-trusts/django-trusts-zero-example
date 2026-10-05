@@ -829,4 +829,46 @@ the operator/browser proof.
 - [ ] Do not set `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`.
 - [ ] Set `CSRF_TRUSTED_ORIGINS` on HTTPS deploys (unchanged).
 
+# Core #267: permission content type must match the object
+
+This record is the **Zero Example pairing** against Core draft
+[django-trusts#269](https://github.com/django-trusts/django-trusts/pull/269)
+tip `71699ba35f960780fd9eb1a7fe027623584e8034`. Historical sections above
+stay as written.
+
+## Pin
+
+| | |
+| --- | --- |
+| Previous | Core `781a33dfc46fa3ba10a5e8b634de2d47780e857b` (#241 policy-SQL) + Zero `3184479ade417c57307c3e18b6c0289347a05687`. |
+| New | Core `71699ba35f960780fd9eb1a7fe027623584e8034` + the same Zero SHA. |
+| Replacement | Same git URLs, new Core SHA in `requirements.txt` / `pyproject.toml` / `CORE_PIN_SHA`. No floating branch. Zero is not retargeted. |
+| Affected | Package install, `trusts-policy.lock.yaml`, pin-integrity tests. |
+| Authorization | Seeded same-model allow/deny is unchanged. A stored permission whose `content_type` is a different model is `False` / omitted. |
+
+## Old → new
+
+`auth.Permission` grants in the lockfile join `django_content_type` on
+the same permission row and bind the protected model's `app_label` and
+`model` (`projects` / `project`, `trusts` / `trust`). The tip's renderer
+also emits `get_permitted_users` for each content. There is no new
+Trusts schema and no new registration option.
+
+Same-model checks stay grants, including `projects.read_project` on a
+project and `trusts.read_trust` on a trust the grant reaches. Asking
+either permission of the other model is a denial in one SQL statement
+(`has_perm`, `get_all_permissions`, and `.authorized()`). Django's
+active-superuser short-circuit on `has_perm` is unchanged and is still
+not copied into the list queryset.
+
+## Migration-bot checklist (#267 example)
+
+- [ ] Pin Core `71699ba35f960780fd9eb1a7fe027623584e8034` and Zero `3184479ade417c57307c3e18b6c0289347a05687`.
+- [ ] Regenerate `trusts-policy.lock.yaml` with `trusts_policy_sql --lock` while `TRUSTS_POLICY_DATABASE=policy` (SQLite).
+- [ ] Confirm the lock binds `{const: "projects"}, {const: "project"}` and `{const: "trusts"}, {const: "trust"}`.
+- [ ] Keep existing `has_perm` / `.permitted()` Trust:own and Project proofs.
+- [ ] `python manage.py check` clean of `trusts.E001` / `trusts.E007` / `trusts.E009`.
+- [ ] `python manage.py test projects`.
+- [ ] Do not merge Core #269 from this repository. Do not Dokku-deploy this revision.
+
 

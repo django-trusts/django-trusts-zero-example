@@ -43,7 +43,7 @@ from .query import editable_projects, readable_projects
 User = get_user_model()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CORE_PIN_SHA = "781a33dfc46fa3ba10a5e8b634de2d47780e857b"
+CORE_PIN_SHA = "71699ba35f960780fd9eb1a7fe027623584e8034"
 ZERO_PIN_SHA = "3184479ade417c57307c3e18b6c0289347a05687"
 FORBIDDEN_CONDITION_NODES = frozenset(
     {
@@ -998,6 +998,12 @@ class ZeroInstallAndCheckTests(SimpleTestCase):
         self.assertEqual(first, second)
         self.assertEqual(committed, first)
         self.assertIn(b'\n  engine: "django.db.backends.sqlite3"\n', committed)
+        # #267: each auth.Permission grant pins the protected model's
+        # content identity. The tip also emits the reverse-user statement.
+        self.assertIn(b'{const: "projects"}, {const: "project"}', committed)
+        self.assertIn(b'{const: "trusts"}, {const: "trust"}', committed)
+        self.assertIn(b'"app_label" = %s AND', committed)
+        self.assertIn(b"\n        get_permitted_users:\n", committed)
 
 
 class TrustOwnPublicOutcomeTests(TestCase):
@@ -1090,3 +1096,58 @@ class TrustOwnPublicOutcomeTests(TestCase):
         bob = User.objects.get(pk=self.bob.pk)
         self.assertFalse(bob.has_perm("trusts.change_trust:own", self.acme))
         self.assertNotIn(self.acme, Trust.objects.permitted("change:own", bob))
+
+
+class ContentTypeBoundaryTests(TestCase):
+    """A permission row authorizes only its own content type (Core #267).
+
+    The project trust stores both a Project permission and a Trust
+    permission. The trust path can reach a child Trust and the project.
+    Each permission stays on the model named by ``content_type``.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.data = seed_demo()
+        cls.alice = cls.data["users"]["alice"]
+        cls.notes = cls.data["projects"]["alice-private-notes"]
+        cls.child = Trust.objects.create(
+            settlor=cls.alice,
+            title="notes-child",
+            trust=cls.notes.trust,
+        )
+        cls.read_project = project_permission(READ)
+        cls.read_trust = Permission.objects.get(
+            content_type=ContentType.objects.get_for_model(Trust),
+            codename="read_trust",
+        )
+        TrustUserPermission.objects.create(
+            trust=cls.notes.trust,
+            entity=cls.alice,
+            permission=cls.read_trust,
+        )
+
+    def test_same_model_grants_stay_and_cross_model_pairs_deny(self):
+        alice = User.objects.get(pk=self.alice.pk)
+        notes = Project.objects.get(pk=self.notes.pk)
+        child = Trust.objects.get(pk=self.child.pk)
+
+        with self.assertNumQueries(1):
+            self.assertTrue(alice.has_perm("projects.read_project", notes))
+        with self.assertNumQueries(1):
+            self.assertTrue(alice.has_perm("trusts.read_trust", child))
+        with self.assertNumQueries(1):
+            self.assertFalse(alice.has_perm("projects.read_project", child))
+        with self.assertNumQueries(1):
+            self.assertFalse(alice.has_perm("trusts.read_trust", notes))
+
+        self.assertIn("projects.read_project", alice.get_all_permissions(notes))
+        self.assertNotIn("trusts.read_trust", alice.get_all_permissions(notes))
+        self.assertIn("trusts.read_trust", alice.get_all_permissions(child))
+        self.assertNotIn("projects.read_project", alice.get_all_permissions(child))
+
+        self.assertIn(notes, Project.objects.authorized(alice, self.read_project))
+        self.assertNotIn(notes, Project.objects.authorized(alice, self.read_trust))
+        self.assertIn(child, Trust.objects.authorized(alice, self.read_trust))
+        self.assertNotIn(child, Trust.objects.authorized(alice, self.read_project))
+        self.assertIn(notes, readable_projects(alice))

@@ -1,9 +1,9 @@
-# Python >=3.12, Django 6.1.x. Core is the #241 policy-SQL merge on
-# DEV_LOCKFILE. Zero is main at the register() donation (Zero #38),
-# which is what that core accepts. Unpinned django-trusts resolves to
-# PyPI 0.10.x. No floating branch.
+# Python >=3.12, Django 6.1.x. Core is the #267 content-type denial
+# tip (draft PR #269, based on dev 7503ae8). Zero stays at the
+# register() donation this example already runs. Unpinned
+# django-trusts resolves to PyPI 0.10.x. No floating branch.
 Django>=6.1,<6.2
-django-trusts @ git+https://github.com/django-trusts/django-trusts.git@781a33dfc46fa3ba10a5e8b634de2d47780e857b
+django-trusts @ git+https://github.com/django-trusts/django-trusts.git@71699ba35f960780fd9eb1a7fe027623584e8034
 django-trusts-zero @ git+https://github.com/django-trusts/django-trusts-zero.git@3184479ade417c57307c3e18b6c0289347a05687
 gunicorn>=23.0.0
 # Pure-Python driver: mysqlclient has no Linux wheels and needs client headers
