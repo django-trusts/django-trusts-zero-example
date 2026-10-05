@@ -832,7 +832,10 @@ the operator/browser proof.
 # #267: permission content type must match the object
 
 This record is the **Zero Example lockfile delta** for Core #267 /
-draft PR #269. Historical sections above stay as written.
+approved, unmerged PR #269 at `1f35b31c2698c797ff97f6558c8cf9481a49338a`,
+paired with Zero `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`.
+`user.has_perm` stays a permission string. Historical sections above
+stay as written.
 
 Seeded Alice/Bob/Carol/Dave grants are same-model (`projects.read_project`
 and `projects.change_project` on a Project, `trusts.change_trust` on a
@@ -847,15 +850,15 @@ migration is added. The previous example pin was Core
 
 | | |
 | --- | --- |
-| Previous | Core `781a33dfc46fa3ba10a5e8b634de2d47780e857b` + Zero `3184479ade417c57307c3e18b6c0289347a05687`. |
-| New | Core `71699ba35f960780fd9eb1a7fe027623584e8034` (django-trusts#269) and the same Zero pin. No concurrent Zero PR changes the pair. |
-| Replacement | Same git URLs, new Core SHA in `requirements.txt` / `pyproject.toml` / `CORE_PIN_SHA`. |
+| Previous | Core `71699ba35f960780fd9eb1a7fe027623584e8034` + Zero `3184479ade417c57307c3e18b6c0289347a05687`. |
+| New | Core `1f35b31c2698c797ff97f6558c8cf9481a49338a` (django-trusts#269) and Zero `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf` (django-trusts-zero#46). |
+| Replacement | Same git URLs, new SHAs in `requirements.txt` / `pyproject.toml` / `CORE_PIN_SHA` / `ZERO_PIN_SHA`. |
 | Affected | Policy lock SQL. `auth.Permission` grants join `django_content_type` and bind the protected model's `app_label` and `model`. The lockfile also records `get_permitted_users`, which this Core tip compiles and the previous pin did not. |
 | Authorization | Same-model demo allow/deny is unchanged. Cross-model pairs on an applicable path are `False` / empty. |
 
 ## Migration-bot checklist (#267)
 
-- [ ] Pin Core `71699ba35f960780fd9eb1a7fe027623584e8034` and Zero `3184479ade417c57307c3e18b6c0289347a05687`.
+- [ ] Pin Core `1f35b31c2698c797ff97f6558c8cf9481a49338a` and Zero `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`.
 - [ ] Regenerate `trusts-policy.lock.yaml` from `render_policy_sql_bytes()` on the SQLite `policy` alias. Do not hand-edit the SQL.
 - [ ] Confirm `python manage.py check` is clean of `trusts.E009`.
 - [ ] Confirm a Project permission still grants on that Project and denies on the Trust reached by the same style of trustee row.
