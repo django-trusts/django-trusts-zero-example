@@ -831,20 +831,23 @@ the operator/browser proof.
 
 # Core #267: permission content type must match the object
 
-This record is the **Zero Example pairing** against Core draft
-[django-trusts#269](https://github.com/django-trusts/django-trusts/pull/269)
-tip `71699ba35f960780fd9eb1a7fe027623584e8034`. Historical sections above
-stay as written.
+This record is the **Zero Example pairing** against the approved,
+unmerged head of
+[django-trusts#269](https://github.com/django-trusts/django-trusts/pull/269),
+`1f35b31c2698c797ff97f6558c8cf9481a49338a`, and the paired Zero
+candidate `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`. Historical
+sections above stay as written. `user.has_perm` stays a permission
+string. The content-type denial applies to `auth.Permission`.
 
 ## Pin
 
 | | |
 | --- | --- |
-| Previous | Core `781a33dfc46fa3ba10a5e8b634de2d47780e857b` (#241 policy-SQL) + Zero `3184479ade417c57307c3e18b6c0289347a05687`. |
-| New | Core `71699ba35f960780fd9eb1a7fe027623584e8034` + the same Zero SHA. |
-| Replacement | Same git URLs, new Core SHA in `requirements.txt` / `pyproject.toml` / `CORE_PIN_SHA`. No floating branch. Zero is not retargeted. |
+| Previous | Core `71699ba35f960780fd9eb1a7fe027623584e8034` + Zero `3184479ade417c57307c3e18b6c0289347a05687`. |
+| New | Core `1f35b31c2698c797ff97f6558c8cf9481a49338a` + Zero `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`. |
+| Replacement | Same git URLs, new SHAs in `requirements.txt` / `pyproject.toml` / `CORE_PIN_SHA` / `ZERO_PIN_SHA`. No floating branch. |
 | Affected | Package install, `trusts-policy.lock.yaml`, pin-integrity tests. |
-| Authorization | Seeded same-model allow/deny is unchanged. A stored permission whose `content_type` is a different model is `False` / omitted. |
+| Authorization | Seeded same-model allow/deny is unchanged. An `auth.Permission` whose `content_type` is a different model is `False` / omitted. |
 
 ## Old → new
 
@@ -863,7 +866,7 @@ not copied into the list queryset.
 
 ## Migration-bot checklist (#267 example)
 
-- [ ] Pin Core `71699ba35f960780fd9eb1a7fe027623584e8034` and Zero `3184479ade417c57307c3e18b6c0289347a05687`.
+- [ ] Pin Core `1f35b31c2698c797ff97f6558c8cf9481a49338a` and Zero `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`.
 - [ ] Regenerate `trusts-policy.lock.yaml` with `trusts_policy_sql --lock` while `TRUSTS_POLICY_DATABASE=policy` (SQLite).
 - [ ] Confirm the lock binds `{const: "projects"}, {const: "project"}` and `{const: "trusts"}, {const: "trust"}`.
 - [ ] Keep existing `has_perm` / `.permitted()` Trust:own and Project proofs.
