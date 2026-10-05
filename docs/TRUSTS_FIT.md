@@ -7,10 +7,10 @@ authorization thesis is complete.
 Example behavior changes are recorded in [migrates.md](../migrates.md).
 django-trusts-zero owns the concrete Trust/Content models, stored
 grants, and `TrustModelBackend`. Schema-neutral django-trusts is the
-library Zero depends on. This example keeps the #131 E-methods Core pin
-and advances Zero to the merged #191 decorator-family revision: Zero
-`517307170f954f187da78c56e236ec1779c46e29` (merged #36) with Core
-C-methods merge `f5211c11047eb6810680f5d1b13bf34b2c376635`. It does not
+library Zero depends on. This example pins Core
+`71699ba35f960780fd9eb1a7fe027623584e8034` (draft #269, #267
+content-type denial) with Zero
+`3184479ade417c57307c3e18b6c0289347a05687`. It does not
 register a Project permission condition.
 
 Inspected for this revision:

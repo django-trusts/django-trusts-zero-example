@@ -829,4 +829,38 @@ the operator/browser proof.
 - [ ] Do not set `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`.
 - [ ] Set `CSRF_TRUSTED_ORIGINS` on HTTPS deploys (unchanged).
 
+# #267: permission content type must match the object
+
+This record is the **Zero Example lockfile delta** for Core #267 /
+draft PR #269. Historical sections above stay as written.
+
+Seeded Alice/Bob/Carol/Dave grants are same-model (`projects.read_project`
+and `projects.change_project` on a Project, `trusts.change_trust` on a
+Trust). Those decisions stay. A trustee row whose `auth.Permission`
+content type is the other model is now a denial on `has_perm`,
+`get_all_permissions`, and `.authorized()`, including when the Trust
+path and the Project path can both reach the row. No Trusts schema
+migration is added. The previous example pin was Core
+`781a33dfc46fa3ba10a5e8b634de2d47780e857b`.
+
+## Pin
+
+| | |
+| --- | --- |
+| Previous | Core `781a33dfc46fa3ba10a5e8b634de2d47780e857b` + Zero `3184479ade417c57307c3e18b6c0289347a05687`. |
+| New | Core `71699ba35f960780fd9eb1a7fe027623584e8034` (django-trusts#269) and the same Zero pin. No concurrent Zero PR changes the pair. |
+| Replacement | Same git URLs, new Core SHA in `requirements.txt` / `pyproject.toml` / `CORE_PIN_SHA`. |
+| Affected | Policy lock SQL. `auth.Permission` grants join `django_content_type` and bind the protected model's `app_label` and `model`. The lockfile also records `get_permitted_users`, which this Core tip compiles and the previous pin did not. |
+| Authorization | Same-model demo allow/deny is unchanged. Cross-model pairs on an applicable path are `False` / empty. |
+
+## Migration-bot checklist (#267)
+
+- [ ] Pin Core `71699ba35f960780fd9eb1a7fe027623584e8034` and Zero `3184479ade417c57307c3e18b6c0289347a05687`.
+- [ ] Regenerate `trusts-policy.lock.yaml` from `render_policy_sql_bytes()` on the SQLite `policy` alias. Do not hand-edit the SQL.
+- [ ] Confirm `python manage.py check` is clean of `trusts.E009`.
+- [ ] Confirm a Project permission still grants on that Project and denies on the Trust reached by the same style of trustee row.
+- [ ] Confirm a Trust permission still grants on that Trust and denies on the Project.
+- [ ] `python manage.py test projects`
+- [ ] Do not merge ahead of django-trusts#269. Do not edit Core in this PR.
+
 

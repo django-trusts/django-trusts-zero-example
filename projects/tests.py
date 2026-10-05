@@ -43,7 +43,7 @@ from .query import editable_projects, readable_projects
 User = get_user_model()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CORE_PIN_SHA = "781a33dfc46fa3ba10a5e8b634de2d47780e857b"
+CORE_PIN_SHA = "71699ba35f960780fd9eb1a7fe027623584e8034"
 ZERO_PIN_SHA = "3184479ade417c57307c3e18b6c0289347a05687"
 FORBIDDEN_CONDITION_NODES = frozenset(
     {
@@ -1090,3 +1090,79 @@ class TrustOwnPublicOutcomeTests(TestCase):
         bob = User.objects.get(pk=self.bob.pk)
         self.assertFalse(bob.has_perm("trusts.change_trust:own", self.acme))
         self.assertNotIn(self.acme, Trust.objects.permitted("change:own", bob))
+
+
+class ContentTypeBoundaryTests(TestCase):
+    """A stored auth.Permission authorizes only its own content type (#267).
+
+    The project plan and the Trust-as-content plan can both reach an
+    object from one trustee row. The permission row's content type has
+    to be that object's own identity; the other model is a denial.
+    """
+
+    def setUp(self):
+        self.data = seed_demo()
+        self.alice = User.objects.get(username="alice")
+        self.notes = Project.objects.get(
+            pk=self.data["projects"]["alice-private-notes"].pk
+        )
+        self.read_project = Permission.objects.get(
+            content_type=ContentType.objects.get_for_model(Project),
+            codename="read_project",
+        )
+        self.change_trust = Permission.objects.get(
+            content_type=ContentType.objects.get_for_model(Trust),
+            codename="change_trust",
+        )
+        # Project path: TUP.trust is the project's own trust.
+        TrustUserPermission.objects.get_or_create(
+            trust=self.notes.trust,
+            entity=self.alice,
+            permission=self.change_trust,
+        )
+        # Trust path: content.trust_id is the root, so the row sits there.
+        TrustUserPermission.objects.get_or_create(
+            trust=Trust.objects.get_root(),
+            entity=self.alice,
+            permission=self.read_project,
+        )
+        TrustUserPermission.objects.get_or_create(
+            trust=Trust.objects.get_root(),
+            entity=self.alice,
+            permission=self.change_trust,
+        )
+
+    def test_project_rows_follow_the_project_content_type(self):
+        alice = User.objects.get(pk=self.alice.pk)
+        notes = Project.objects.get(pk=self.notes.pk)
+
+        self.assertTrue(alice.has_perm("projects.read_project", notes))
+        self.assertTrue(alice.has_perm("projects.change_project", notes))
+        self.assertIn(notes, Project.objects.permitted("read_project", alice))
+        self.assertIn(
+            notes,
+            Project.objects.authorized(alice, self.read_project),
+        )
+        self.assertIn("projects.read_project", alice.get_all_permissions(notes))
+
+        self.assertFalse(alice.has_perm("trusts.change_trust", notes))
+        self.assertNotIn("trusts.change_trust", alice.get_all_permissions(notes))
+        self.assertNotIn(
+            notes,
+            Project.objects.authorized(alice, self.change_trust),
+        )
+
+    def test_trust_rows_follow_the_trust_content_type(self):
+        alice = User.objects.get(pk=self.alice.pk)
+        trust = Project.objects.get(pk=self.notes.pk).trust
+
+        self.assertTrue(alice.has_perm("trusts.change_trust", trust))
+        self.assertIn(trust, Trust.objects.authorized(alice, self.change_trust))
+        self.assertIn("trusts.change_trust", alice.get_all_permissions(trust))
+
+        self.assertFalse(alice.has_perm("projects.read_project", trust))
+        self.assertNotIn("projects.read_project", alice.get_all_permissions(trust))
+        self.assertNotIn(
+            trust,
+            Trust.objects.authorized(alice, self.read_project),
+        )
