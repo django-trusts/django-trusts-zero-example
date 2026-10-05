@@ -64,7 +64,7 @@ FORBIDDEN_CONDITION_NODES = frozenset(
 def _pin_sha_from_requirements(package):
     text = (REPO_ROOT / "requirements.txt").read_text()
     match = re.search(
-        rf"{re.escape(package)} @ git\\+https://github\\.com/[^@\\s]+@([0-9a-f]{{40}})",
+        rf"{re.escape(package)} @ git\+https://github\.com/[^@\s]+@([0-9a-f]{{40}})",
         text,
     )
     if match is None:
@@ -531,7 +531,7 @@ class TrustGroupProjectSettingsTests(TestCase):
         response = self.client.get(self.notes.get_absolute_url())
         self.assertContains(response, '<span class="badge">private</span>', html=True)
         self.assertNotContains(response, '<span class="badge">public</span>', html=True)
-        self.assertContains(response, "Associated \u2014 grants nothing until local rights are enabled")
+        self.assertContains(response, "Associated — grants nothing until local rights are enabled")
         self.assertNotContains(response, 'id="id_is_public" checked')
         self.assertFalse(response.context["is_public"])
         self.assertFalse(response.context["visibility_form"].initial["is_public"])
@@ -573,7 +573,7 @@ class TrustGroupProjectSettingsTests(TestCase):
         self.assertContains(handbook, "editor")
         self.assertContains(handbook, "does <strong>not</strong> grant access")
         self.assertNotContains(
-            handbook, "Associated \u2014 grants nothing until local rights are enabled"
+            handbook, "Associated — grants nothing until local rights are enabled"
         )
 
         notes = self.client.get(self.notes.get_absolute_url())
@@ -603,7 +603,7 @@ class TrustGroupProjectSettingsTests(TestCase):
         self.assertNotIn(self.notes.pk, readable_projects(carol).values_list("pk", flat=True))
 
         detail = self.client.get(self.notes.get_absolute_url())
-        self.assertContains(detail, "Associated \u2014 grants nothing until local rights are enabled")
+        self.assertContains(detail, "Associated — grants nothing until local rights are enabled")
         self.assertContains(detail, "No access granted until local rights are enabled")
 
         self.client.post(
