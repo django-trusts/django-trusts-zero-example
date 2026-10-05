@@ -92,11 +92,12 @@ the same system check, migration, seed, and authorized-list smoke path.
 ## Configuration
 
 The application pins
-[django-trusts at `71699ba35f960780fd9eb1a7fe027623584e8034`](https://github.com/django-trusts/django-trusts/commit/71699ba35f960780fd9eb1a7fe027623584e8034)
-(draft #269, content-type denial for #267) with
-[django-trusts-zero at `3184479ade417c57307c3e18b6c0289347a05687`](https://github.com/django-trusts/django-trusts-zero/commit/3184479ade417c57307c3e18b6c0289347a05687)
-(main at the `register()` donation). The exact revisions are pinned in
-`requirements.txt` and `pyproject.toml`.
+[django-trusts at `1f35b31c2698c797ff97f6558c8cf9481a49338a`](https://github.com/django-trusts/django-trusts/commit/1f35b31c2698c797ff97f6558c8cf9481a49338a)
+(approved, unmerged #269, content-type denial for #267) with
+[django-trusts-zero at `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`](https://github.com/django-trusts/django-trusts-zero/commit/0bc4f0b5003fb42a74f216b787f5630d2fecc5bf)
+(the paired #46 candidate). `user.has_perm` takes the permission string.
+The content-type denial applies to `auth.Permission`. The exact
+revisions are pinned in `requirements.txt` and `pyproject.toml`.
 
 The relevant Django settings are:
 

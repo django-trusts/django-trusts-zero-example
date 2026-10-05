@@ -1,11 +1,10 @@
-# Python >=3.12, Django 6.1.x. Core is django-trusts#269 (#267
-# content-type denial) at 71699ba, which is dev plus that commit.
-# Zero stays at the register() donation on main; no concurrent Zero
-# PR changes this pair. Unpinned django-trusts resolves to PyPI
-# 0.10.x. No floating branch.
+# Python >=3.12, Django 6.1.x. Core is the approved, unmerged
+# django-trusts#269 head 1f35b31 (#267 content-type denial).
+# Zero is the paired #46 candidate. Unpinned django-trusts resolves
+# to PyPI 0.10.x. No floating branch.
 Django>=6.1,<6.2
-django-trusts @ git+https://github.com/django-trusts/django-trusts.git@71699ba35f960780fd9eb1a7fe027623584e8034
-django-trusts-zero @ git+https://github.com/django-trusts/django-trusts-zero.git@3184479ade417c57307c3e18b6c0289347a05687
+django-trusts @ git+https://github.com/django-trusts/django-trusts.git@1f35b31c2698c797ff97f6558c8cf9481a49338a
+django-trusts-zero @ git+https://github.com/django-trusts/django-trusts-zero.git@0bc4f0b5003fb42a74f216b787f5630d2fecc5bf
 gunicorn>=23.0.0
 # Pure-Python driver: mysqlclient has no Linux wheels and needs client headers
 # the stock Herokuish Python buildpack does not provide.
