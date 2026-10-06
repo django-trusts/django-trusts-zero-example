@@ -43,7 +43,7 @@ from .query import editable_projects, readable_projects
 User = get_user_model()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CORE_PIN_SHA = "1553d7a54c755e121136578b40280d20ffc709b1"
+CORE_PIN_SHA = "47ae25cffcfa542b3e4a2940f528a63fcb32062d"
 ZERO_PIN_SHA = "0bc4f0b5003fb42a74f216b787f5630d2fecc5bf"
 FORBIDDEN_CONDITION_NODES = frozenset(
     {
@@ -531,7 +531,7 @@ class TrustGroupProjectSettingsTests(TestCase):
         response = self.client.get(self.notes.get_absolute_url())
         self.assertContains(response, '<span class="badge">private</span>', html=True)
         self.assertNotContains(response, '<span class="badge">public</span>', html=True)
-        self.assertContains(response, "Associated — grants nothing until local rights are enabled")
+        self.assertContains(response, "Associated \u2014 grants nothing until local rights are enabled")
         self.assertNotContains(response, 'id="id_is_public" checked')
         self.assertFalse(response.context["is_public"])
         self.assertFalse(response.context["visibility_form"].initial["is_public"])
@@ -573,7 +573,7 @@ class TrustGroupProjectSettingsTests(TestCase):
         self.assertContains(handbook, "editor")
         self.assertContains(handbook, "does <strong>not</strong> grant access")
         self.assertNotContains(
-            handbook, "Associated — grants nothing until local rights are enabled"
+            handbook, "Associated \u2014 grants nothing until local rights are enabled"
         )
 
         notes = self.client.get(self.notes.get_absolute_url())
@@ -603,7 +603,7 @@ class TrustGroupProjectSettingsTests(TestCase):
         self.assertNotIn(self.notes.pk, readable_projects(carol).values_list("pk", flat=True))
 
         detail = self.client.get(self.notes.get_absolute_url())
-        self.assertContains(detail, "Associated — grants nothing until local rights are enabled")
+        self.assertContains(detail, "Associated \u2014 grants nothing until local rights are enabled")
         self.assertContains(detail, "No access granted until local rights are enabled")
 
         self.client.post(
