@@ -1,9 +1,9 @@
 # Python >=3.12, Django 6.1.x. Core is the approved, unmerged
-# django-trusts#269 head 1f35b31 (#267 content-type denial).
+# django-trusts#269 head 1553d7a (#267 content-type denial).
 # Zero is the paired #46 candidate. Unpinned django-trusts resolves
 # to PyPI 0.10.x. No floating branch.
 Django>=6.1,<6.2
-django-trusts @ git+https://github.com/django-trusts/django-trusts.git@1f35b31c2698c797ff97f6558c8cf9481a49338a
+django-trusts @ git+https://github.com/django-trusts/django-trusts.git@1553d7a54c755e121136578b40280d20ffc709b1
 django-trusts-zero @ git+https://github.com/django-trusts/django-trusts-zero.git@0bc4f0b5003fb42a74f216b787f5630d2fecc5bf
 gunicorn>=23.0.0
 # Pure-Python driver: mysqlclient has no Linux wheels and needs client headers

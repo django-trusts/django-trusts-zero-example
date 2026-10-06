@@ -8,7 +8,7 @@ Example behavior changes are recorded in [migrates.md](../migrates.md).
 django-trusts-zero owns the concrete Trust/Content models, stored
 grants, and `TrustModelBackend`. Schema-neutral django-trusts is the
 library Zero depends on. This example pins Core
-`1f35b31c2698c797ff97f6558c8cf9481a49338a` (approved, unmerged #269,
+`1553d7a54c755e121136578b40280d20ffc709b1` (approved, unmerged #269,
 #267 content-type denial) with Zero
 `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`. `user.has_perm` takes the
 permission string. The content-type check applies to `auth.Permission`.
