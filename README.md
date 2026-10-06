@@ -91,9 +91,9 @@ the same system check, migration, seed, and authorized-list smoke path.
 
 ## Configuration
 
-The application pairs the register() Zero donation with the approved,
-unmerged Core #267 head:
-[django-trusts at `1553d7a54c755e121136578b40280d20ffc709b1`](https://github.com/django-trusts/django-trusts/commit/1553d7a54c755e121136578b40280d20ffc709b1)
+The application pairs the register() Zero donation with the merged
+Core #267 commit:
+[django-trusts at `47ae25cffcfa542b3e4a2940f528a63fcb32062d`](https://github.com/django-trusts/django-trusts/commit/47ae25cffcfa542b3e4a2940f528a63fcb32062d)
 ([django-trusts#269](https://github.com/django-trusts/django-trusts/pull/269),
 from `dev` `7503ae8`) and
 [django-trusts-zero at `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`](https://github.com/django-trusts/django-trusts-zero/commit/0bc4f0b5003fb42a74f216b787f5630d2fecc5bf).
