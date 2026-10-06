@@ -9,7 +9,7 @@ django-trusts-zero owns the concrete Trust/Content models, stored
 grants, and `TrustModelBackend`. Schema-neutral django-trusts is the
 library Zero depends on. This example pairs Zero
 `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf` with Core
-`1f35b31c2698c797ff97f6558c8cf9481a49338a` (approved, unmerged #269,
+`1553d7a54c755e121136578b40280d20ffc709b1` (approved, unmerged #269,
 the #267 content-type denial). `user.has_perm` takes the permission
 string. The content-type check applies to `auth.Permission`. It does
 not register a Project permission condition. An `auth.Permission` row
@@ -29,7 +29,7 @@ Inspected for this revision:
 | `django-trusts-zero` Z-methods (merged #33) | `2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716` | Configured-backend donation; `Trust:own` stays a builder. |
 | `django-trusts` C-methods (merged #172) | `f5211c11047eb6810680f5d1b13bf34b2c376635` | `backend.register_relationship` / `backend.add_named_filter`. |
 | `django-trusts-zero` #191 leg 1 (merged #36) | `517307170f954f187da78c56e236ec1779c46e29` | Legacy request family on `trusts.zero.decorators`. |
-| `django-trusts` #267 head (approved, unmerged #269) | `1f35b31c2698c797ff97f6558c8cf9481a49338a` | `auth.Permission` content type must match the protected object. `user.has_perm` stays a permission string. |
+| `django-trusts` #267 head (approved, unmerged #269) | `1553d7a54c755e121136578b40280d20ffc709b1` | `auth.Permission` content type must match the protected object. `user.has_perm` stays a permission string. |
 | `django-trusts-zero` #46 candidate | `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf` | Zero pin this example runs with that Core head. |
 
 The historical branch is the useful ancestor for *domain shape* (a `Project`
