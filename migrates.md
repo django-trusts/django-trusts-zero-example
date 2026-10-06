@@ -834,7 +834,7 @@ the operator/browser proof.
 This record is the **Zero Example pairing** against the approved,
 unmerged head of
 [django-trusts#269](https://github.com/django-trusts/django-trusts/pull/269),
-`1f35b31c2698c797ff97f6558c8cf9481a49338a`, and the paired Zero
+`1553d7a54c755e121136578b40280d20ffc709b1`, and the paired Zero
 candidate `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`. Historical
 sections above stay as written. `user.has_perm` stays a permission
 string. The content-type denial applies to `auth.Permission`.
@@ -844,7 +844,7 @@ string. The content-type denial applies to `auth.Permission`.
 | | |
 | --- | --- |
 | Previous | Core `71699ba35f960780fd9eb1a7fe027623584e8034` + Zero `3184479ade417c57307c3e18b6c0289347a05687`. |
-| New | Core `1f35b31c2698c797ff97f6558c8cf9481a49338a` + Zero `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`. |
+| New | Core `1553d7a54c755e121136578b40280d20ffc709b1` + Zero `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`. |
 | Replacement | Same git URLs, new SHAs in `requirements.txt` / `pyproject.toml` / `CORE_PIN_SHA` / `ZERO_PIN_SHA`. No floating branch. |
 | Affected | Package install, `trusts-policy.lock.yaml`, pin-integrity tests. |
 | Authorization | Seeded same-model allow/deny is unchanged. An `auth.Permission` whose `content_type` is a different model is `False` / omitted. |
@@ -866,7 +866,7 @@ not copied into the list queryset.
 
 ## Migration-bot checklist (#267 example)
 
-- [ ] Pin Core `1f35b31c2698c797ff97f6558c8cf9481a49338a` and Zero `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`.
+- [ ] Pin Core `1553d7a54c755e121136578b40280d20ffc709b1` and Zero `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`.
 - [ ] Regenerate `trusts-policy.lock.yaml` with `trusts_policy_sql --lock` while `TRUSTS_POLICY_DATABASE=policy` (SQLite).
 - [ ] Confirm the lock binds `{const: "projects"}, {const: "project"}` and `{const: "trusts"}, {const: "trust"}`.
 - [ ] Keep existing `has_perm` / `.permitted()` Trust:own and Project proofs.
