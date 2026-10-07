@@ -91,13 +91,22 @@ the same system check, migration, seed, and authorized-list smoke path.
 
 ## Configuration
 
-The application keeps the #131 E-methods Core pin and advances Zero to
-the merged #191 decorator-family revision:
-[django-trusts-zero at `517307170f954f187da78c56e236ec1779c46e29`](https://github.com/django-trusts/django-trusts-zero/commit/517307170f954f187da78c56e236ec1779c46e29)
-(legacy request family, merged #36; includes Z-methods #33) with
-[schema-neutral django-trusts at `f5211c11047eb6810680f5d1b13bf34b2c376635`](https://github.com/django-trusts/django-trusts/commit/f5211c11047eb6810680f5d1b13bf34b2c376635)
-(C-methods, merged #172). The exact compatible revisions are pinned in
-`requirements.txt` and `pyproject.toml`.
+The application pairs the register() Zero donation with the merged
+Core #267 commit:
+[django-trusts at `47ae25cffcfa542b3e4a2940f528a63fcb32062d`](https://github.com/django-trusts/django-trusts/commit/47ae25cffcfa542b3e4a2940f528a63fcb32062d)
+([django-trusts#269](https://github.com/django-trusts/django-trusts/pull/269),
+from `dev` `7503ae8`) and
+[django-trusts-zero at `deee4bcf204b753ee851a939dd03fdcbe3828fcd`](https://github.com/django-trusts/django-trusts-zero/commit/deee4bcf204b753ee851a939dd03fdcbe3828fcd)
+([django-trusts-zero#46](https://github.com/django-trusts/django-trusts-zero/pull/46)).
+The exact revisions are pinned in `requirements.txt` and `pyproject.toml`.
+`user.has_perm` takes the permission string. The content-type denial
+applies to `auth.Permission`.
+
+An `auth.Permission` row authorizes only the model named by its
+`content_type`. Seeded project and Trust grants are same-model, so the
+Alice/Bob/Carol/Dave allow and deny results are unchanged. The committed
+`trusts-policy.lock.yaml` is the SQLite rendering of that predicate,
+including `get_permitted_users`.
 
 The relevant Django settings are:
 

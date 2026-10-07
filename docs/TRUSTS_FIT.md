@@ -7,11 +7,14 @@ authorization thesis is complete.
 Example behavior changes are recorded in [migrates.md](../migrates.md).
 django-trusts-zero owns the concrete Trust/Content models, stored
 grants, and `TrustModelBackend`. Schema-neutral django-trusts is the
-library Zero depends on. This example keeps the #131 E-methods Core pin
-and advances Zero to the merged #191 decorator-family revision: Zero
-`517307170f954f187da78c56e236ec1779c46e29` (merged #36) with Core
-C-methods merge `f5211c11047eb6810680f5d1b13bf34b2c376635`. It does not
-register a Project permission condition.
+library Zero depends on. This example pairs Zero
+`deee4bcf204b753ee851a939dd03fdcbe3828fcd` (merged #46) with Core
+`47ae25cffcfa542b3e4a2940f528a63fcb32062d` (merged #269,
+the #267 content-type denial). `user.has_perm` takes the permission
+string. The content-type check applies to `auth.Permission`. It does
+not register a Project permission condition. An `auth.Permission` row
+grants only the model named by its `content_type`. Seeded grants are
+same-model.
 
 Inspected for this revision:
 
@@ -26,6 +29,8 @@ Inspected for this revision:
 | `django-trusts-zero` Z-methods (merged #33) | `2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716` | Configured-backend donation; `Trust:own` stays a builder. |
 | `django-trusts` C-methods (merged #172) | `f5211c11047eb6810680f5d1b13bf34b2c376635` | `backend.register_relationship` / `backend.add_named_filter`. |
 | `django-trusts-zero` #191 leg 1 (merged #36) | `517307170f954f187da78c56e236ec1779c46e29` | Legacy request family on `trusts.zero.decorators`. |
+| `django-trusts` #267 (merged #269) | `47ae25cffcfa542b3e4a2940f528a63fcb32062d` | `auth.Permission` content type must match the protected object. `user.has_perm` stays a permission string. |
+| `django-trusts-zero` #46 (merged) | `deee4bcf204b753ee851a939dd03fdcbe3828fcd` | Zero pin this example runs with that Core commit. |
 
 The historical branch is the useful ancestor for *domain shape* (a `Project`
 `Content` subclass, settlor trusts, collaborators, groups). Zero ships

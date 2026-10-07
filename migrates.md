@@ -829,4 +829,49 @@ the operator/browser proof.
 - [ ] Do not set `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`.
 - [ ] Set `CSRF_TRUSTED_ORIGINS` on HTTPS deploys (unchanged).
 
+# Core #267: permission content type must match the object
+
+This record is the **Zero Example pairing** against the merge commit of
+[django-trusts#269](https://github.com/django-trusts/django-trusts/pull/269),
+`47ae25cffcfa542b3e4a2940f528a63fcb32062d`, and the paired Zero
+merge `deee4bcf204b753ee851a939dd03fdcbe3828fcd` (merged
+[django-trusts-zero#46](https://github.com/django-trusts/django-trusts-zero/pull/46)). Historical
+sections above stay as written. `user.has_perm` stays a permission
+string. The content-type denial applies to `auth.Permission`.
+
+## Pin
+
+| | |
+| --- | --- |
+| Previous | Core `71699ba35f960780fd9eb1a7fe027623584e8034` + Zero `3184479ade417c57307c3e18b6c0289347a05687`. |
+| New | Core `47ae25cffcfa542b3e4a2940f528a63fcb32062d` + Zero `deee4bcf204b753ee851a939dd03fdcbe3828fcd`. |
+| Replacement | Same git URLs, new SHAs in `requirements.txt` / `pyproject.toml` / `CORE_PIN_SHA` / `ZERO_PIN_SHA`. No floating branch. |
+| Affected | Package install, `trusts-policy.lock.yaml`, pin-integrity tests. |
+| Authorization | Seeded same-model allow/deny is unchanged. An `auth.Permission` whose `content_type` is a different model is `False` / omitted. |
+
+## Old → new
+
+`auth.Permission` grants in the lockfile join `django_content_type` on
+the same permission row and bind the protected model's `app_label` and
+`model` (`projects` / `project`, `trusts` / `trust`). The tip's renderer
+also emits `get_permitted_users` for each content. There is no new
+Trusts schema and no new registration option.
+
+Same-model checks stay grants, including `projects.read_project` on a
+project and `trusts.read_trust` on a trust the grant reaches. Asking
+either permission of the other model is a denial in one SQL statement
+(`has_perm`, `get_all_permissions`, and `.authorized()`). Django's
+active-superuser short-circuit on `has_perm` is unchanged and is still
+not copied into the list queryset.
+
+## Migration-bot checklist (#267 example)
+
+- [ ] Pin Core `47ae25cffcfa542b3e4a2940f528a63fcb32062d` and Zero `deee4bcf204b753ee851a939dd03fdcbe3828fcd`.
+- [ ] Regenerate `trusts-policy.lock.yaml` with `trusts_policy_sql --lock` while `TRUSTS_POLICY_DATABASE=policy` (SQLite).
+- [ ] Confirm the lock binds `{const: "projects"}, {const: "project"}` and `{const: "trusts"}, {const: "trust"}`.
+- [ ] Keep existing `has_perm` / `.permitted()` Trust:own and Project proofs.
+- [ ] `python manage.py check` clean of `trusts.E001` / `trusts.E007` / `trusts.E009`.
+- [ ] `python manage.py test projects`.
+- [ ] Do not Dokku-deploy this revision.
+
 
