@@ -8,7 +8,7 @@ Example behavior changes are recorded in [migrates.md](../migrates.md).
 django-trusts-zero owns the concrete Trust/Content models, stored
 grants, and `TrustModelBackend`. Schema-neutral django-trusts is the
 library Zero depends on. This example pairs Zero
-`0bc4f0b5003fb42a74f216b787f5630d2fecc5bf` with Core
+`deee4bcf204b753ee851a939dd03fdcbe3828fcd` (merged #46) with Core
 `47ae25cffcfa542b3e4a2940f528a63fcb32062d` (merged #269,
 the #267 content-type denial). `user.has_perm` takes the permission
 string. The content-type check applies to `auth.Permission`. It does
@@ -30,7 +30,7 @@ Inspected for this revision:
 | `django-trusts` C-methods (merged #172) | `f5211c11047eb6810680f5d1b13bf34b2c376635` | `backend.register_relationship` / `backend.add_named_filter`. |
 | `django-trusts-zero` #191 leg 1 (merged #36) | `517307170f954f187da78c56e236ec1779c46e29` | Legacy request family on `trusts.zero.decorators`. |
 | `django-trusts` #267 (merged #269) | `47ae25cffcfa542b3e4a2940f528a63fcb32062d` | `auth.Permission` content type must match the protected object. `user.has_perm` stays a permission string. |
-| `django-trusts-zero` #46 candidate | `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf` | Zero pin this example runs with that Core commit. |
+| `django-trusts-zero` #46 (merged) | `deee4bcf204b753ee851a939dd03fdcbe3828fcd` | Zero pin this example runs with that Core commit. |
 
 The historical branch is the useful ancestor for *domain shape* (a `Project`
 `Content` subclass, settlor trusts, collaborators, groups). Zero ships

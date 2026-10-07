@@ -44,7 +44,7 @@ User = get_user_model()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CORE_PIN_SHA = "47ae25cffcfa542b3e4a2940f528a63fcb32062d"
-ZERO_PIN_SHA = "0bc4f0b5003fb42a74f216b787f5630d2fecc5bf"
+ZERO_PIN_SHA = "deee4bcf204b753ee851a939dd03fdcbe3828fcd"
 FORBIDDEN_CONDITION_NODES = frozenset(
     {
         "condition_refs",

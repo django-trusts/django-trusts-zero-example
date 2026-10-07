@@ -96,7 +96,8 @@ Core #267 commit:
 [django-trusts at `47ae25cffcfa542b3e4a2940f528a63fcb32062d`](https://github.com/django-trusts/django-trusts/commit/47ae25cffcfa542b3e4a2940f528a63fcb32062d)
 ([django-trusts#269](https://github.com/django-trusts/django-trusts/pull/269),
 from `dev` `7503ae8`) and
-[django-trusts-zero at `0bc4f0b5003fb42a74f216b787f5630d2fecc5bf`](https://github.com/django-trusts/django-trusts-zero/commit/0bc4f0b5003fb42a74f216b787f5630d2fecc5bf).
+[django-trusts-zero at `deee4bcf204b753ee851a939dd03fdcbe3828fcd`](https://github.com/django-trusts/django-trusts-zero/commit/deee4bcf204b753ee851a939dd03fdcbe3828fcd)
+([django-trusts-zero#46](https://github.com/django-trusts/django-trusts-zero/pull/46)).
 The exact revisions are pinned in `requirements.txt` and `pyproject.toml`.
 `user.has_perm` takes the permission string. The content-type denial
 applies to `auth.Permission`.
