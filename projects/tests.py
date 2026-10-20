@@ -18,13 +18,10 @@ from django.forms import modelform_factory
 from django.test import RequestFactory, SimpleTestCase, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
-from trusts.core import BackendHandle, PlanQueryCompiler, TrustsRegistry, any_plan_records
-from trusts.zero.apps import CANONICAL_BACKEND_PATH, zero_config
+from trusts.compile.catalogs import Catalog
+from trusts.compile.factory import RegistryFactory
+from trusts.zero.backends import TrustModelBackend
 from trusts.zero.models import Role, Trust, TrustGroup, TrustGroupPermission, TrustUserPermission
-from trusts.zero.registration import (
-    donate_content_permission_conditions,
-    donate_installed_permission_conditions,
-)
 
 from .demo import seed_demo
 from .grants import (
@@ -43,7 +40,7 @@ from .query import editable_projects, readable_projects
 User = get_user_model()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CORE_PIN_SHA = "f5211c11047eb6810680f5d1b13bf34b2c376635"
+CORE_PIN_SHA = "b240eed7fd12f34891c6dd0957d944c9f2591473"
 ZERO_PIN_SHA = "517307170f954f187da78c56e236ec1779c46e29"
 FORBIDDEN_CONDITION_NODES = frozenset(
     {
@@ -97,6 +94,19 @@ class SeededTrustsDemoTests(TestCase):
 
     def _titles(self, user):
         return list(readable_projects(user).values_list("title", flat=True))
+
+    def test_project_is_registered_as_zero_content(self):
+        alice = self.users["alice"]
+        notes = self.projects["alice-private-notes"]
+        self.assertTrue(alice.has_perm("projects.read_project", notes))
+        read = project_permission(READ)
+        catalog = TrustModelBackend().get_catalog()
+        self.assertEqual(
+            set(catalog.filter_by_permitted_content(
+                Trust.objects.all(), alice, read, content=Project,
+            ).values_list("pk", flat=True)),
+            set(readable_projects(alice).values_list("trust_id", flat=True)),
+        )
 
     def test_seeded_users_groups_and_owned_objects(self):
         self.assertEqual(set(self.users), {"alice", "bob", "carol", "dave"})
@@ -914,10 +924,6 @@ class ZeroInstallAndCheckTests(SimpleTestCase):
             settings.AUTHENTICATION_BACKENDS,
         )
 
-    def test_project_is_registered_as_zero_content(self):
-        backend = zero_config().configured_backend(CANONICAL_BACKEND_PATH)
-        self.assertTrue(any_plan_records((backend,), Project))
-
     def test_legacy_callback_setting_is_unset(self):
         self.assertFalse(
             getattr(settings, "TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS", False)
@@ -993,28 +999,28 @@ class TrustOwnPublicOutcomeTests(TestCase):
         cls.notes = cls.data["projects"]["alice-private-notes"]
 
     def test_startup_reentry_and_first_party_builder_are_zero_sql(self):
-        backend = zero_config().configured_backend(CANONICAL_BACKEND_PATH)
-        with self.assertNumQueries(0):
-            donate_installed_permission_conditions(backend)
-
-        isolated_store = TrustsRegistry()
-        isolated = BackendHandle(
-            path="tests.isolated",
-            registry=isolated_store,
-            compiler=PlanQueryCompiler(),
+        change_trust = Permission.objects.get(
+            content_type=ContentType.objects.get_for_model(Trust),
+            codename="change_trust",
         )
-        with self.assertNumQueries(0):
-            donate_content_permission_conditions(isolated, Trust)
-        self.assertTrue(
-            isolated_store.evaluate_permission_condition(
-                Trust, "own", self.alice, "trusts.change_trust", self.acme
+        for user in (self.alice, self.dave):
+            TrustUserPermission.objects.get_or_create(
+                trust=self.acme, entity=user, permission=change_trust,
             )
-        )
-        self.assertFalse(
-            isolated_store.evaluate_permission_condition(
-                Trust, "own", self.dave, "trusts.change_trust", self.acme
+        factory = RegistryFactory(path="tests.isolated", user_model=User)
+        with self.assertNumQueries(0):
+            for code, builder in Trust._meta.permission_conditions:
+                factory.register_permission_condition(Trust, code, builder)
+            factory.register_public(
+                trust=TrustUserPermission,
+                user="entity",
+                permission="permission",
+                content="trust",
             )
-        )
+            catalog = Catalog(factory.build())
+            Catalog(factory.build())
+        self.assertTrue(catalog.has_perm(self.alice, "trusts.change_trust:own", self.acme))
+        self.assertFalse(catalog.has_perm(self.dave, "trusts.change_trust:own", self.acme))
 
     def test_trust_own_is_registered_at_startup_and_project_has_none(self):
         alice = User.objects.get(pk=self.alice.pk)
