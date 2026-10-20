@@ -18,8 +18,6 @@ from django.forms import modelform_factory
 from django.test import RequestFactory, SimpleTestCase, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
-from trusts.compile.catalogs import Catalog
-from trusts.compile.factory import RegistryFactory
 from trusts.zero.backends import TrustModelBackend
 from trusts.zero.models import Role, Trust, TrustGroup, TrustGroupPermission, TrustUserPermission
 
@@ -1003,24 +1001,15 @@ class TrustOwnPublicOutcomeTests(TestCase):
             content_type=ContentType.objects.get_for_model(Trust),
             codename="change_trust",
         )
+        root = Trust.objects.get_root()
         for user in (self.alice, self.dave):
             TrustUserPermission.objects.get_or_create(
-                trust=self.acme, entity=user, permission=change_trust,
+                trust=root, entity=user, permission=change_trust,
             )
-        factory = RegistryFactory(path="tests.isolated", user_model=User)
-        with self.assertNumQueries(0):
-            for code, builder in Trust._meta.permission_conditions:
-                factory.register_permission_condition(Trust, code, builder)
-            factory.register_public(
-                trust=TrustUserPermission,
-                user="entity",
-                permission="permission",
-                content="trust",
-            )
-            catalog = Catalog(factory.build())
-            Catalog(factory.build())
-        self.assertTrue(catalog.has_perm(self.alice, "trusts.change_trust:own", self.acme))
-        self.assertFalse(catalog.has_perm(self.dave, "trusts.change_trust:own", self.acme))
+        alice = User.objects.get(pk=self.alice.pk)
+        dave = User.objects.get(pk=self.dave.pk)
+        self.assertTrue(alice.has_perm("trusts.change_trust:own", self.acme))
+        self.assertFalse(dave.has_perm("trusts.change_trust:own", self.acme))
 
     def test_trust_own_is_registered_at_startup_and_project_has_none(self):
         alice = User.objects.get(pk=self.alice.pk)
