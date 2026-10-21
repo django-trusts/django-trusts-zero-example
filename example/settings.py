@@ -47,8 +47,11 @@ INSTALLED_APPS = [
     "projects.apps.ProjectsConfig",
 ]
 
+# ZeroConfig requires its own backend. Project relations are recorded
+# on ProjectsConfig and answered only by ProjectsBackend.
 AUTHENTICATION_BACKENDS = [
     "trusts.zero.backends.TrustModelBackend",
+    "projects.backends.ProjectsBackend",
 ]
 
 MIDDLEWARE = [

@@ -829,4 +829,130 @@ the operator/browser proof.
 - [ ] Do not set `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`.
 - [ ] Set `CSRF_TRUSTED_ORIGINS` on HTTPS deploys (unchanged).
 
+# Public recorder: the projects app freezes its own catalog
+
+This record is the **Zero Example public-API delta** on live `dev`
+(Core #334, Zero #53). Historical sections above stay as written,
+including the configured-backend donation and the #191 E2 decorator
+import. Those describe earlier stairs.
+
+Authorization **data**, seeded identities, TrustGroup intersection,
+list/direct agreement, fail-closed anonymous/inactive behavior, fixed
+query bounds, and the no-Python-permission-loop rule are unchanged.
+No Trusts schema migration is added. Repository `master` stays on the
+pre-Zero baseline. README and `docs/TRUSTS_FIT.md` are Chat's.
+
+## Pin
+
+| | |
+| --- | --- |
+| Previous | Core `f5211c11047eb6810680f5d1b13bf34b2c376635` + Zero `517307170f954f187da78c56e236ec1779c46e29` (example `dev` `8a0706510c48a476537c45e23098f79195023e49`). |
+| New | Core `57da11607859e43987258a312a388f247a906571` (django-trusts #334) and Zero `8f25dd9faf5110b001c0c7fea28d4d0920ab401b` (django-trusts-zero #53, branch `cursor/public-core-api-519d`). |
+| Replacement | Same git URLs, new SHAs in `requirements.txt` / `pyproject.toml` / pin-integrity tests. No floating branch. |
+| Affected | Package install, `ProjectsConfig`, `AUTHENTICATION_BACKENDS`, tests that imported removed modules. |
+| Authorization | Same seeded allow/deny once Project is recorded on the projects recorder and both backends are listed. |
+
+## Old → new
+
+```python
+# Old: donate onto Zero's configured backend
+from trusts.zero.apps import CANONICAL_BACKEND_PATH, zero_config
+from trusts.zero.registration import register_zero_content
+
+backend = zero_config().configured_backend(CANONICAL_BACKEND_PATH)
+register_zero_content(backend, Project)
+
+# New: this app freezes its own recorder
+from trusts.apps import TrustsConfigMixin
+from trusts.zero.registration import register_zero_content
+
+class ProjectsConfig(TrustsConfigMixin):
+    def ready(self):
+        register_zero_content(self.recorder, Project)
+        super().ready()
+```
+
+`AUTHENTICATION_BACKENDS` keeps `trusts.zero.backends.TrustModelBackend`
+(ZeroConfig still requires that path) and adds
+`projects.backends.ProjectsBackend`. Each backend answers only for the
+relations its app recorded. App order does not matter.
+
+An unknown `has_perm` suffix is false. `.permitted()` with an unknown
+condition name raises `trusts.errors.TrustsConfigurationError`.
+
+## Changes (example)
+
+### 21. ProjectsConfig owns the Project recorder
+
+| | |
+| --- | --- |
+| Previous | `ProjectsConfig.ready()` called `zero_config().configured_backend(CANONICAL_BACKEND_PATH)` and `register_zero_content(backend, Project)`. `AUTHENTICATION_BACKENDS` listed only Zero's backend. |
+| New | `ProjectsConfig(TrustsConfigMixin)` calls `register_zero_content(self.recorder, Project)` before `super().ready()`. `projects.backends.ProjectsBackend` is listed next to Zero's backend. |
+| Replacement | Public `TrustsConfigMixin` and `TrustModelBackendMixin`. Do not call `configured_backend`. Do not import `trusts.core`, `trusts.conditions`, `trusts.plan`, `trusts.compile`, or `trusts.inspect`. |
+| Affected | `projects/apps.py`, `projects/backends.py`, `example/settings.py`. |
+| Authorization | Project `has_perm` / `.permitted()` / view guards read the projects catalog. Trust `:own` stays on Zero's catalog. |
+
+### 22. Tests stop pinning removed modules
+
+| | |
+| --- | --- |
+| Previous | Tests imported `trusts.core` (`BackendHandle`, `PlanQueryCompiler`, `TrustsRegistry`, `any_plan_records`) and Zero helpers `donate_installed_permission_conditions` / `donate_content_permission_conditions`. Unknown Project `:own` expected `AttributeError`. |
+| New | Those tests are gone. Seeded allow/deny, `has_perm`, `.permitted()`, and the view guards stay. Unknown Project `:own` is false on `has_perm` and `TrustsConfigurationError` on `.permitted()`. |
+| Replacement | Public outcomes only. |
+| Affected | `projects/tests.py`. |
+| Authorization | Unchanged seeded allow/deny. |
+
+## Migration-bot checklist (public recorder)
+
+Search active code (not the labeled historical stairs above, and not
+README / `docs/TRUSTS_FIT.md`) for:
+
+```text
+configured_backend
+zero_config(
+from trusts.core import
+from trusts.conditions import
+trusts.plan
+trusts.compile
+trusts.inspect
+donate_installed_permission_conditions
+donate_content_permission_conditions
+f5211c11047eb6810680f5d1b13bf34b2c376635
+517307170f954f187da78c56e236ec1779c46e29
+```
+
+Classify historical `migrates.md` stairs separately. Those stay as
+written. README and `docs/TRUSTS_FIT.md` belong to Chat.
+
+Then:
+
+- [ ] Pin Core `57da11607859e43987258a312a388f247a906571` and Zero `8f25dd9faf5110b001c0c7fea28d4d0920ab401b` in `requirements.txt`, `pyproject.toml`, and `CORE_PIN_SHA` / `ZERO_PIN_SHA`.
+- [ ] Confirm `ProjectsConfig` subclasses `TrustsConfigMixin` and calls `register_zero_content(self.recorder, Project)` before `super().ready()`.
+- [ ] Confirm `AUTHENTICATION_BACKENDS` lists `trusts.zero.backends.TrustModelBackend` and `projects.backends.ProjectsBackend`, and not `trusts.backends.TrustModelBackend`.
+- [ ] Confirm application and test modules do not import `trusts.core`, `trusts.conditions`, `trusts.plan`, `trusts.compile`, or `trusts.inspect`.
+- [ ] Keep `has_perm` / `.permitted()` Trust:own and Project proofs, and the view/decorator proofs.
+- [ ] Keep `dev` in push CI. Do not rewrite `master`.
+- [ ] `python manage.py check` clean of error-level messages (`trusts.E001` / `trusts.E007` stay absent).
+- [ ] `python manage.py test projects` on Python 3.12–3.14.
+- [ ] Fresh `migrate --noinput` + `seed_demo` (no new Trusts schema).
+- [ ] `collectstatic` + admin static fetch.
+- [ ] MySQL 8 smoke against the exact pair.
+- [ ] Do **not** Dokku-deploy this revision.
+- [ ] Do not merge. Do not start schema/data changes, decorator redesign, or release/version work.
+
+## Deployment / migration checklist (example)
+
+Do **not** Dokku-deploy this public-recorder revision. After Chat review,
+a later redeploy from `dev` can follow (no new Trusts schema). Issue #7
+remains the operator/browser proof.
+
+- [ ] Install Core at `57da11607859e43987258a312a388f247a906571` and Zero at `8f25dd9faf5110b001c0c7fea28d4d0920ab401b`.
+- [ ] `python manage.py check` (must be clean of error-level messages).
+- [ ] `python manage.py migrate --noinput` (no new Trusts migration expected).
+- [ ] `python manage.py seed_demo` only if the database is new or local TrustGroup rows are missing.
+- [ ] `python manage.py test projects`
+- [ ] Keep `AUTHENTICATION_BACKENDS` as `trusts.zero.backends.TrustModelBackend` and `projects.backends.ProjectsBackend`.
+- [ ] Do not set `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`.
+- [ ] Set `CSRF_TRUSTED_ORIGINS` on HTTPS deploys (unchanged).
+
 
