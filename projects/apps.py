@@ -1,27 +1,27 @@
-from django.apps import AppConfig
+"""Projects app config.
+
+Each app owns its recorder. ``ready`` records Project, then
+``TrustsConfigMixin.ready`` freezes that recorder. Zero's recorder
+is not this app's. ``INSTALLED_APPS`` order does not matter.
+"""
+
+from trusts.apps import TrustsConfigMixin
+from trusts.zero.registration import register_zero_content
 
 
-class ProjectsConfig(AppConfig):
+class ProjectsConfig(TrustsConfigMixin):
     default_auto_field = "django.db.models.AutoField"
     name = "projects"
     verbose_name = "Projects"
 
     def ready(self):
-        from . import signals  # noqa: F401 — enroll new users in public-readers
-        self._register_project_with_zero()
-
-    def _register_project_with_zero(self):
-        """Donate Project as a Zero content terminal (TUP + both TGP plans).
-
-        ZeroConfig registers Trust-as-content only. Host Content subclasses
-        must call register_zero_content(backend, Model) or permitted()/has_perm
-        stay empty. Z-methods donation is idempotent; do not key off
-        the private store for re-entry.
-        """
-        from trusts.zero.apps import CANONICAL_BACKEND_PATH, zero_config
-        from trusts.zero.registration import register_zero_content
-
+        # Forced: projects.models imports trusts.zero.models.Content.
+        # Content's manager module imports trusts.models, which imports
+        # auth.Permission. projects.signals imports that chain and calls
+        # get_user_model() at module level. Neither import is safe while
+        # Django is still loading app configs.
         from .models import Project
+        from . import signals  # noqa: F401 — enroll new users in public-readers
 
-        backend = zero_config().configured_backend(CANONICAL_BACKEND_PATH)
-        register_zero_content(backend, Project)
+        register_zero_content(self.recorder, Project)
+        super().ready()
