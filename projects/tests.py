@@ -41,8 +41,8 @@ from .query import editable_projects, readable_projects
 User = get_user_model()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CORE_PIN_SHA = "57da11607859e43987258a312a388f247a906571"
-ZERO_PIN_SHA = "8f25dd9faf5110b001c0c7fea28d4d0920ab401b"
+CORE_PIN_SHA = "154dd32da822147fcada3782d0a0f92213e14705"
+ZERO_PIN_SHA = "66f21235988264f0ea23f3da45efb54cb768bf29"
 FORBIDDEN_CONDITION_NODES = frozenset(
     {
         "condition_refs",
@@ -348,7 +348,7 @@ class PaginationAndQueryTests(TestCase):
         self.assertTrue(is_public(changelog))
         dave = User.objects.get(username="dave")
         self.assertTrue(dave.has_perm("projects.read_project", changelog))
-        # Trust :own is a named filter on Zero's recorder. Project does
+        # Trust :own is a named filter on Zero's registry. Project does
         # not register one. An unknown has_perm suffix is false.
         self.assertFalse(dave.has_perm("projects.read_project:own", changelog))
         self.assertFalse(dave.has_perm("projects.change_project", changelog))
@@ -1033,7 +1033,7 @@ class TrustOwnPublicOutcomeTests(TestCase):
 
     def test_trust_own_is_registered_at_startup_and_project_has_none(self):
         alice = User.objects.get(pk=self.alice.pk)
-        # Registered on Zero's recorder. Fail-closed without a Trust grant.
+        # Registered on Zero's registry. Fail-closed without a Trust grant.
         self.assertFalse(alice.has_perm("trusts.change_trust:own", self.acme))
         # Project has no :own filter. has_perm is false; permitted raises.
         self.assertFalse(alice.has_perm("projects.read_project:own", self.notes))

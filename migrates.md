@@ -955,4 +955,109 @@ remains the operator/browser proof.
 - [ ] Do not set `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`.
 - [ ] Set `CSRF_TRUSTED_ORIGINS` on HTTPS deploys (unchanged).
 
+# Register Project at the end of models.py
+
+This record is the **Zero Example registry-at-models delta** on the
+public-recorder stair (Core #338, Zero #54). Historical sections above
+stay as written, including `register_zero_content(self.recorder, Project)`
+in `ProjectsConfig.ready()`. Those describe earlier stairs.
+
+Authorization **data**, seeded identities, TrustGroup intersection,
+list/direct agreement, fail-closed anonymous/inactive behavior, fixed
+query bounds, and the no-Python-permission-loop rule are unchanged.
+No Trusts schema migration is added. Repository `master` stays on the
+pre-Zero baseline. README and `docs/TRUSTS_FIT.md` are Chat's.
+
+## Pin
+
+| | |
+| --- | --- |
+| Previous | Core `57da11607859e43987258a312a388f247a906571` (django-trusts #334) and Zero `8f25dd9faf5110b001c0c7fea28d4d0920ab401b` (django-trusts-zero #53). Example head `54f35142e812848ba3ae8f31f31c29538ff45534`. |
+| New | Core `154dd32da822147fcada3782d0a0f92213e14705` (django-trusts #338, branch `registry-at-models`) and Zero `66f21235988264f0ea23f3da45efb54cb768bf29` (django-trusts-zero #54, branch `registry-at-models`). |
+| Replacement | Same git URLs, new SHAs in `requirements.txt` / `pyproject.toml` / pin-integrity tests. No floating branch. |
+| Affected | Package install, `projects/models.py`, `ProjectsConfig.ready()`. |
+| Authorization | Same seeded allow/deny once Project is recorded on `ProjectsBackend().get_registry()` and both backends are listed. |
+
+## Old → new
+
+```python
+# Old: donate on the app config's recorder inside ready()
+from trusts.zero.registration import register_zero_content
+
+class ProjectsConfig(TrustsConfigMixin):
+    def ready(self):
+        register_zero_content(self.recorder, Project)
+        super().ready()
+
+# New: public registry, at the end of models.py
+from .backends import ProjectsBackend
+from trusts.zero.registration import register_zero_content
+
+register_zero_content(ProjectsBackend().get_registry(), Project)
+```
+
+`ProjectsConfig` still subclasses `TrustsConfigMixin`. `ready()` imports
+signals and calls `super().ready()`. It does not register.
+`AUTHENTICATION_BACKENDS` is unchanged: Zero's backend and
+`projects.backends.ProjectsBackend`. Each backend answers only for the
+relations its app recorded.
+
+## Changes (example)
+
+### 23. Project registration moves to models.py
+
+| | |
+| --- | --- |
+| Previous | `ProjectsConfig.ready()` called `register_zero_content(self.recorder, Project)` before `super().ready()`. |
+| New | The end of `projects/models.py` calls `register_zero_content(ProjectsBackend().get_registry(), Project)`. `ready()` does not register. |
+| Replacement | Public `get_registry()` and `register_zero_content`. Do not read `self.recorder`. Do not import `trusts.core`, `trusts.conditions`, `trusts.plan`, `trusts.compile`, or `trusts.inspect`. |
+| Affected | `projects/models.py`, `projects/apps.py`. |
+| Authorization | Project `has_perm` / `.permitted()` / view guards read the projects catalog. Trust `:own` stays on Zero's catalog. |
+
+## Migration-bot checklist (registry at models)
+
+Search active code (not the labeled historical stairs above, and not
+README / `docs/TRUSTS_FIT.md`) for:
+
+```text
+self.recorder
+57da11607859e43987258a312a388f247a906571
+8f25dd9faf5110b001c0c7fea28d4d0920ab401b
+```
+
+Classify historical `migrates.md` stairs separately. Those stay as
+written. README and `docs/TRUSTS_FIT.md` belong to Chat.
+
+Then:
+
+- [ ] Pin Core `154dd32da822147fcada3782d0a0f92213e14705` and Zero `66f21235988264f0ea23f3da45efb54cb768bf29` in `requirements.txt`, `pyproject.toml`, and `CORE_PIN_SHA` / `ZERO_PIN_SHA`.
+- [ ] Confirm the end of `projects/models.py` calls `register_zero_content(ProjectsBackend().get_registry(), Project)`.
+- [ ] Confirm `ProjectsConfig.ready()` does not register and does not read `self.recorder`.
+- [ ] Confirm `AUTHENTICATION_BACKENDS` lists `trusts.zero.backends.TrustModelBackend` and `projects.backends.ProjectsBackend`, and not `trusts.backends.TrustModelBackend`.
+- [ ] Confirm application and test modules do not import `trusts.core`, `trusts.conditions`, `trusts.plan`, `trusts.compile`, or `trusts.inspect`.
+- [ ] Keep `has_perm` / `.permitted()` Trust:own and Project proofs, and the view/decorator proofs.
+- [ ] Keep `dev` in push CI. Do not rewrite `master`.
+- [ ] `python manage.py check` clean of error-level messages (`trusts.E001` / `trusts.E007` stay absent).
+- [ ] `python manage.py test projects` on Python 3.12–3.14.
+- [ ] Fresh `migrate --noinput` + `seed_demo` (no new Trusts schema).
+- [ ] `collectstatic` + admin static fetch.
+- [ ] MySQL 8 smoke against the exact pair.
+- [ ] Do **not** Dokku-deploy this revision.
+- [ ] Do not merge. Do not start schema/data changes, decorator redesign, or release/version work.
+
+## Deployment / migration checklist (example)
+
+Do **not** Dokku-deploy this registry-at-models revision. After Chat
+review, a later redeploy from `dev` can follow (no new Trusts schema).
+Issue #7 remains the operator/browser proof.
+
+- [ ] Install Core at `154dd32da822147fcada3782d0a0f92213e14705` and Zero at `66f21235988264f0ea23f3da45efb54cb768bf29`.
+- [ ] `python manage.py check` (must be clean of error-level messages).
+- [ ] `python manage.py migrate --noinput` (no new Trusts migration expected).
+- [ ] `python manage.py seed_demo` only if the database is new or local TrustGroup rows are missing.
+- [ ] `python manage.py test projects`
+- [ ] Keep `AUTHENTICATION_BACKENDS` as `trusts.zero.backends.TrustModelBackend` and `projects.backends.ProjectsBackend`.
+- [ ] Do not set `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS`.
+- [ ] Set `CSRF_TRUSTED_ORIGINS` on HTTPS deploys (unchanged).
+
 

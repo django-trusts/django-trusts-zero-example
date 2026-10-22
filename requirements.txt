@@ -1,10 +1,10 @@
-# Python >=3.12, Django 6.1.x. Core is the public companion API
-# (django-trusts #334). Zero is the per-app recorder
-# (django-trusts-zero #53). Unpinned django-trusts resolves to PyPI
-# 0.10.x. No floating branch.
+# Python >=3.12, Django 6.1.x. Core is registry-at-models
+# (django-trusts #338, 154dd32). Zero is registry-at-models
+# (django-trusts-zero #54, 66f2123). Unpinned django-trusts resolves
+# to PyPI 0.10.x. No floating branch.
 Django>=6.1,<6.2
-django-trusts @ git+https://github.com/django-trusts/django-trusts.git@57da11607859e43987258a312a388f247a906571
-django-trusts-zero @ git+https://github.com/django-trusts/django-trusts-zero.git@8f25dd9faf5110b001c0c7fea28d4d0920ab401b
+django-trusts @ git+https://github.com/django-trusts/django-trusts.git@154dd32da822147fcada3782d0a0f92213e14705
+django-trusts-zero @ git+https://github.com/django-trusts/django-trusts-zero.git@66f21235988264f0ea23f3da45efb54cb768bf29
 gunicorn>=23.0.0
 # Pure-Python driver: mysqlclient has no Linux wheels and needs client headers
 # the stock Herokuish Python buildpack does not provide.

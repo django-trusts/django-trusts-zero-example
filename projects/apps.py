@@ -1,12 +1,13 @@
 """Projects app config.
 
-Each app owns its recorder. ``ready`` records Project, then
-``TrustsConfigMixin.ready`` freezes that recorder. Zero's recorder
-is not this app's. ``INSTALLED_APPS`` order does not matter.
+Project is registered at the end of ``models.py`` through
+``ProjectsBackend.get_registry()``. This config subclasses
+``TrustsConfigMixin`` so that backend has a registration log.
+``INSTALLED_APPS`` order does not matter. ``ready`` connects signals
+and does not register.
 """
 
 from trusts.apps import TrustsConfigMixin
-from trusts.zero.registration import register_zero_content
 
 
 class ProjectsConfig(TrustsConfigMixin):
@@ -15,13 +16,11 @@ class ProjectsConfig(TrustsConfigMixin):
     verbose_name = "Projects"
 
     def ready(self):
-        # Forced: projects.models imports trusts.zero.models.Content.
-        # Content's manager module imports trusts.models, which imports
-        # auth.Permission. projects.signals imports that chain and calls
+        # Forced: projects.signals imports projects.grants, which imports
+        # trusts.zero.models. That module's manager imports trusts.models,
+        # which imports auth.Permission. projects.signals also calls
         # get_user_model() at module level. Neither import is safe while
         # Django is still loading app configs.
-        from .models import Project
         from . import signals  # noqa: F401 — enroll new users in public-readers
 
-        register_zero_content(self.recorder, Project)
         super().ready()

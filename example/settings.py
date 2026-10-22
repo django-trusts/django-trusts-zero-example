@@ -48,7 +48,8 @@ INSTALLED_APPS = [
 ]
 
 # ZeroConfig requires its own backend. Project relations are recorded
-# on ProjectsConfig and answered only by ProjectsBackend.
+# at the end of projects/models.py on ProjectsBackend's registry.
+# Each backend answers only for the relations its app recorded.
 AUTHENTICATION_BACKENDS = [
     "trusts.zero.backends.TrustModelBackend",
     "projects.backends.ProjectsBackend",
