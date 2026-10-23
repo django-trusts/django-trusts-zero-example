@@ -18,7 +18,6 @@ from django.forms import modelform_factory
 from django.test import RequestFactory, SimpleTestCase, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
-from trusts.errors import TrustsConfigurationError
 from trusts.zero.decorators import K, permission_required
 from trusts.zero.models import Role, Trust, TrustGroup, TrustGroupPermission, TrustUserPermission
 
@@ -41,8 +40,8 @@ from .query import editable_projects, readable_projects
 User = get_user_model()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CORE_PIN_SHA = "154dd32da822147fcada3782d0a0f92213e14705"
-ZERO_PIN_SHA = "66f21235988264f0ea23f3da45efb54cb768bf29"
+CORE_PIN_SHA = "780eedfe05083063a1129e278d3de5e292e493bd"
+ZERO_PIN_SHA = "ceb576c7cf494ca28f4a6f4ccb47d30971ce23a0"
 FORBIDDEN_CONDITION_NODES = frozenset(
     {
         "condition_refs",
@@ -1035,10 +1034,12 @@ class TrustOwnPublicOutcomeTests(TestCase):
         alice = User.objects.get(pk=self.alice.pk)
         # Registered on Zero's registry. Fail-closed without a Trust grant.
         self.assertFalse(alice.has_perm("trusts.change_trust:own", self.acme))
-        # Project has no :own filter. has_perm is false; permitted raises.
+        # Project has no :own filter. Unknown names fail closed.
         self.assertFalse(alice.has_perm("projects.read_project:own", self.notes))
-        with self.assertRaises(TrustsConfigurationError):
-            list(Project.objects.permitted("read_project:own", alice))
+        self.assertEqual(
+            list(Project.objects.permitted("read_project:own", alice)),
+            [],
+        )
 
     def test_trust_own_object_and_listing_agree(self):
         change_trust = Permission.objects.get(

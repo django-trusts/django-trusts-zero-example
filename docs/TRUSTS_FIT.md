@@ -7,10 +7,12 @@ authorization thesis is complete.
 Example behavior changes are recorded in [migrates.md](../migrates.md).
 django-trusts-zero owns the concrete Trust/Content models, stored
 grants, and `TrustModelBackend`. Schema-neutral django-trusts is the
-library Zero depends on. This example keeps the #131 E-methods Core pin
-and advances Zero to the merged #191 decorator-family revision: Zero
-`517307170f954f187da78c56e236ec1779c46e29` (merged #36) with Core
-C-methods merge `f5211c11047eb6810680f5d1b13bf34b2c376635`. It does not
+library Zero depends on. This example pins Core
+`780eedfe05083063a1129e278d3de5e292e493bd` (django-trusts #344) and Zero
+`ceb576c7cf494ca28f4a6f4ccb47d30971ce23a0` (django-trusts-zero #57).
+`Project` is recorded at the end of `projects/models.py` with
+`register_zero_content(ProjectsBackend().get_registry(), Project)`.
+`ProjectsConfig.ready()` does not register. This example does not
 register a Project permission condition.
 
 Inspected for this revision:
@@ -26,6 +28,7 @@ Inspected for this revision:
 | `django-trusts-zero` Z-methods (merged #33) | `2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716` | Configured-backend donation; `Trust:own` stays a builder. |
 | `django-trusts` C-methods (merged #172) | `f5211c11047eb6810680f5d1b13bf34b2c376635` | `backend.register_relationship` / `backend.add_named_filter`. |
 | `django-trusts-zero` #191 leg 1 (merged #36) | `517307170f954f187da78c56e236ec1779c46e29` | Legacy request family on `trusts.zero.decorators`. |
+| This example on django-trusts #344 / django-trusts-zero #57 | Core `780eedfe05083063a1129e278d3de5e292e493bd`, Zero `ceb576c7cf494ca28f4a6f4ccb47d30971ce23a0` | `register_zero_content(ProjectsBackend().get_registry(), Project)` at the end of `projects/models.py`. |
 
 The historical branch is the useful ancestor for *domain shape* (a `Project`
 `Content` subclass, settlor trusts, collaborators, groups). Zero ships
@@ -94,23 +97,11 @@ the TrustGroup local/global intersection.
   **not** special-case superusers; a superuser may see a narrower list than
   `has_perm` would allow. That mismatch is documented, not treated as
   Trusts validation.
-- `:own` on `Trust` is a **registration-time builder** donated by Zero
-  during `ZeroConfig.ready()`:
-
-  ```python
-  backend.add_named_filter(
-      Trust, "own", predicate=lambda u, p, o: u == o.settlor,
-  )
-  ```
-
-  Core invokes the callable once with symbolic refs (zero SQL on the
-  first-party donation path), stores only normalized IR, and never runs
-  it during `has_perm` or `.permitted()`. Object checks and
-  `Trust.objects.permitted("change:own", user)` share that IR. This
-  example does not register a Project condition and does not use `:own`
-  for project list membership. Public / private is a group grant, not a
-  condition code. Application modules do not import `condition_refs`,
-  `Expr`, or other Core condition-node constructors.
+- `:own` on `Trust` is Zero's named filter. This example does not
+  register a Project condition and does not use `:own` for project list
+  membership. Public / private is a group grant, not a condition code.
+  Application modules do not import `condition_refs`, `Expr`, or other
+  Core condition-node constructors.
   `TRUSTS_ALLOW_LEGACY_PERMISSION_CALLBACKS` is unset; if it were
   `True` it would be `trusts.E007` and would not restore runtime
   callbacks. `manage.py check` must stay clean of `trusts.E001` /
