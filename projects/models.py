@@ -32,3 +32,11 @@ class Project(Content):
 
     def __str__(self):
         return self.title
+
+
+# Registration runs when this module is imported. Django imports models
+# before ready(), and get_registry() does not build the catalog.
+from .backends import ProjectsBackend
+from trusts.zero.registration import register_zero_content
+
+register_zero_content(ProjectsBackend().get_registry(), Project)
