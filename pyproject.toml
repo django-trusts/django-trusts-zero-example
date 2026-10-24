@@ -5,8 +5,8 @@ description = "Runnable Django example that exercises django-trusts-zero"
 requires-python = ">=3.12"
 dependencies = [
     "Django>=6.1,<6.2",
-    "django-trusts @ git+https://github.com/django-trusts/django-trusts.git@780eedfe05083063a1129e278d3de5e292e493bd",
-    "django-trusts-zero @ git+https://github.com/django-trusts/django-trusts-zero.git@ceb576c7cf494ca28f4a6f4ccb47d30971ce23a0",
+    "django-trusts @ git+https://github.com/django-trusts/django-trusts.git@d38a4991b46948c860b1c4f7c4e4e518a93eabca",
+    "django-trusts-zero @ git+https://github.com/django-trusts/django-trusts-zero.git@3d91640a38933a70b6c0ffdd9ce0878d323185be",
     "gunicorn>=23.0.0",
     "PyMySQL[rsa]>=1.2.0",
     "dj-database-url>=2.3.0",

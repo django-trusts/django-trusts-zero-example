@@ -8,8 +8,8 @@ Example behavior changes are recorded in [migrates.md](../migrates.md).
 django-trusts-zero owns the concrete Trust/Content models, stored
 grants, and `TrustModelBackend`. Schema-neutral django-trusts is the
 library Zero depends on. This example pins Core
-`780eedfe05083063a1129e278d3de5e292e493bd` (django-trusts #344) and Zero
-`ceb576c7cf494ca28f4a6f4ccb47d30971ce23a0` (django-trusts-zero #57).
+`d38a4991b46948c860b1c4f7c4e4e518a93eabca` (django-trusts #344) and Zero
+`3d91640a38933a70b6c0ffdd9ce0878d323185be` (django-trusts-zero #57).
 `Project` is recorded at the end of `projects/models.py` with
 `register_zero_content(ProjectsBackend().get_registry(), Project)`.
 `ProjectsConfig.ready()` does not register. This example does not
@@ -28,7 +28,7 @@ Inspected for this revision:
 | `django-trusts-zero` Z-methods (merged #33) | `2e3cccedb92b4cf85e9d6a3cd2d51821aad1d716` | Configured-backend donation; `Trust:own` stays a builder. |
 | `django-trusts` C-methods (merged #172) | `f5211c11047eb6810680f5d1b13bf34b2c376635` | `backend.register_relationship` / `backend.add_named_filter`. |
 | `django-trusts-zero` #191 leg 1 (merged #36) | `517307170f954f187da78c56e236ec1779c46e29` | Legacy request family on `trusts.zero.decorators`. |
-| This example on django-trusts #344 / django-trusts-zero #57 | Core `780eedfe05083063a1129e278d3de5e292e493bd`, Zero `ceb576c7cf494ca28f4a6f4ccb47d30971ce23a0` | `register_zero_content(ProjectsBackend().get_registry(), Project)` at the end of `projects/models.py`. |
+| This example on django-trusts #344 / django-trusts-zero #57 | Core `d38a4991b46948c860b1c4f7c4e4e518a93eabca`, Zero `3d91640a38933a70b6c0ffdd9ce0878d323185be` | `register_zero_content(ProjectsBackend().get_registry(), Project)` at the end of `projects/models.py`. |
 
 The historical branch is the useful ancestor for *domain shape* (a `Project`
 `Content` subclass, settlor trusts, collaborators, groups). Zero ships

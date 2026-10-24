@@ -92,9 +92,9 @@ the same system check, migration, seed, and authorized-list smoke path.
 ## Configuration
 
 Core and Zero are pinned in `requirements.txt` and `pyproject.toml`:
-[django-trusts at `780eedfe05083063a1129e278d3de5e292e493bd`](https://github.com/django-trusts/django-trusts/commit/780eedfe05083063a1129e278d3de5e292e493bd)
+[django-trusts at `d38a4991b46948c860b1c4f7c4e4e518a93eabca`](https://github.com/django-trusts/django-trusts/commit/d38a4991b46948c860b1c4f7c4e4e518a93eabca)
 (django-trusts #344) and
-[django-trusts-zero at `ceb576c7cf494ca28f4a6f4ccb47d30971ce23a0`](https://github.com/django-trusts/django-trusts-zero/commit/ceb576c7cf494ca28f4a6f4ccb47d30971ce23a0)
+[django-trusts-zero at `3d91640a38933a70b6c0ffdd9ce0878d323185be`](https://github.com/django-trusts/django-trusts-zero/commit/3d91640a38933a70b6c0ffdd9ce0878d323185be)
 (django-trusts-zero #57).
 
 The relevant Django settings are:
