@@ -1,10 +1,10 @@
-# Python >=3.12, Django 6.1.x — Core stays on the #131 E-methods
-# C-methods pin; Zero advances to the merged #191/#36 decorator family
-# (includes Z-methods #33). Unpinned django-trusts resolves to PyPI
-# 0.10.x. No floating branch.
+# Python >=3.12, Django 6.1.x. Core is entries-exact-sql
+# (django-trusts #344, d38a499). Zero is entries-exact-sql
+# (django-trusts-zero #57, 3d91640). Unpinned django-trusts resolves
+# to PyPI 0.10.x. No floating branch.
 Django>=6.1,<6.2
-django-trusts @ git+https://github.com/django-trusts/django-trusts.git@f5211c11047eb6810680f5d1b13bf34b2c376635
-django-trusts-zero @ git+https://github.com/django-trusts/django-trusts-zero.git@517307170f954f187da78c56e236ec1779c46e29
+django-trusts @ git+https://github.com/django-trusts/django-trusts.git@d38a4991b46948c860b1c4f7c4e4e518a93eabca
+django-trusts-zero @ git+https://github.com/django-trusts/django-trusts-zero.git@3d91640a38933a70b6c0ffdd9ce0878d323185be
 gunicorn>=23.0.0
 # Pure-Python driver: mysqlclient has no Linux wheels and needs client headers
 # the stock Herokuish Python buildpack does not provide.

@@ -18,14 +18,11 @@ from django.forms import modelform_factory
 from django.test import RequestFactory, SimpleTestCase, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
-from trusts.core import BackendHandle, PlanQueryCompiler, TrustsRegistry, any_plan_records
-from trusts.zero.apps import CANONICAL_BACKEND_PATH, zero_config
+from trusts.zero.decorators import K, permission_required
 from trusts.zero.models import Role, Trust, TrustGroup, TrustGroupPermission, TrustUserPermission
-from trusts.zero.registration import (
-    donate_content_permission_conditions,
-    donate_installed_permission_conditions,
-)
 
+from . import views
+from .admin import UserAdmin
 from .demo import seed_demo
 from .grants import (
     CHANGE,
@@ -43,8 +40,8 @@ from .query import editable_projects, readable_projects
 User = get_user_model()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CORE_PIN_SHA = "f5211c11047eb6810680f5d1b13bf34b2c376635"
-ZERO_PIN_SHA = "517307170f954f187da78c56e236ec1779c46e29"
+CORE_PIN_SHA = "d38a4991b46948c860b1c4f7c4e4e518a93eabca"
+ZERO_PIN_SHA = "3d91640a38933a70b6c0ffdd9ce0878d323185be"
 FORBIDDEN_CONDITION_NODES = frozenset(
     {
         "condition_refs",
@@ -350,10 +347,9 @@ class PaginationAndQueryTests(TestCase):
         self.assertTrue(is_public(changelog))
         dave = User.objects.get(username="dave")
         self.assertTrue(dave.has_perm("projects.read_project", changelog))
-        # Trust :own is a donated builder. Project does not register one;
-        # public read is a group row, not a condition code.
-        with self.assertRaises(AttributeError):
-            dave.has_perm("projects.read_project:own", changelog)
+        # Trust :own is a named filter on Zero's registry. Project does
+        # not register one. An unknown has_perm suffix is false.
+        self.assertFalse(dave.has_perm("projects.read_project:own", changelog))
         self.assertFalse(dave.has_perm("projects.change_project", changelog))
 
 
@@ -460,8 +456,6 @@ class PublicReadersFormAndAdminTests(TestCase):
         self._assert_public_read(user)
 
     def test_useradmin_save_related_create_and_edit(self):
-        from projects.admin import UserAdmin
-
         factory = RequestFactory()
         request = factory.post("/admin/auth/user/add/", {})
         request.user = User.objects.create_superuser("rootadmin", "root@example.com", "demo")
@@ -898,7 +892,7 @@ class TrustGroupProjectSettingsTests(TestCase):
 
 
 class ZeroInstallAndCheckTests(SimpleTestCase):
-    """Zero install identity: ZeroConfig, Zero backend, builder :own, clean check."""
+    """Zero install identity: ZeroConfig, both backends, clean check."""
 
     def test_installed_apps_use_zero_config_not_bare_trusts(self):
         self.assertIn("trusts.zero.apps.ZeroConfig", settings.INSTALLED_APPS)
@@ -909,14 +903,14 @@ class ZeroInstallAndCheckTests(SimpleTestCase):
             "trusts.zero.backends.TrustModelBackend",
             settings.AUTHENTICATION_BACKENDS,
         )
+        self.assertIn(
+            "projects.backends.ProjectsBackend",
+            settings.AUTHENTICATION_BACKENDS,
+        )
         self.assertNotIn(
             "trusts.backends.TrustModelBackend",
             settings.AUTHENTICATION_BACKENDS,
         )
-
-    def test_project_is_registered_as_zero_content(self):
-        backend = zero_config().configured_backend(CANONICAL_BACKEND_PATH)
-        self.assertTrue(any_plan_records((backend,), Project))
 
     def test_legacy_callback_setting_is_unset(self):
         self.assertFalse(
@@ -933,9 +927,6 @@ class ZeroInstallAndCheckTests(SimpleTestCase):
         self.assertEqual(_installed_vcs_commit("django-trusts-zero"), ZERO_PIN_SHA)
 
     def test_application_modules_import_zero_decorators_not_core(self):
-        from projects import views
-        from trusts.zero.decorators import K, permission_required
-
         imported_core = []
         imported_zero = []
         for path in _application_python_files():
@@ -955,17 +946,64 @@ class ZeroInstallAndCheckTests(SimpleTestCase):
         self.assertFalse(hasattr(views, "authorization_required"))
 
     def test_application_modules_do_not_import_core_condition_nodes(self):
+        private_prefixes = (
+            "trusts.core",
+            "trusts.conditions",
+            "trusts.plan",
+            "trusts.compile",
+            "trusts.inspect",
+            "django_trusts",
+        )
+        removed_names = frozenset(
+            {
+                "configured_backend",
+                "donate_content_permission_conditions",
+                "donate_installed_permission_conditions",
+                "BackendHandle",
+                "PlanQueryCompiler",
+                "TrustsRegistry",
+                "any_plan_records",
+            }
+        )
         imported = []
-        for path in _application_python_files():
-            tree = ast.parse(path.read_text(), filename=str(path))
-            for node in ast.walk(tree):
-                if isinstance(node, ast.ImportFrom) and node.module in {
-                    "trusts.conditions",
-                    "django_trusts",
-                }:
-                    for alias in node.names or []:
-                        if alias.name in FORBIDDEN_CONDITION_NODES or alias.name == "*":
-                            imported.append(f"{path.relative_to(REPO_ROOT)}:{alias.name}")
+        roots = (
+            REPO_ROOT / "projects",
+            REPO_ROOT / "example",
+            REPO_ROOT / "scripts",
+        )
+        for root in roots:
+            for path in root.rglob("*.py"):
+                if "migrations" in path.parts:
+                    continue
+                tree = ast.parse(path.read_text(), filename=str(path))
+                for node in ast.walk(tree):
+                    modules = []
+                    if isinstance(node, ast.ImportFrom) and node.module:
+                        modules.append(node.module)
+                        for alias in node.names or []:
+                            if (
+                                alias.name in FORBIDDEN_CONDITION_NODES
+                                or alias.name in removed_names
+                                or alias.name == "*"
+                            ) and (
+                                node.module in {"trusts.conditions", "django_trusts"}
+                                or alias.name in removed_names
+                            ):
+                                imported.append(
+                                    f"{path.relative_to(REPO_ROOT)}:{alias.name}"
+                                )
+                    elif isinstance(node, ast.Import):
+                        modules.extend(alias.name for alias in node.names)
+                    elif isinstance(node, ast.Attribute) and node.attr in removed_names:
+                        imported.append(
+                            f"{path.relative_to(REPO_ROOT)}:{node.attr}"
+                        )
+                    for module in modules:
+                        if any(
+                            module == prefix or module.startswith(prefix + ".")
+                            for prefix in private_prefixes
+                        ):
+                            imported.append(f"{path.relative_to(REPO_ROOT)}:{module}")
         self.assertEqual(imported, [])
 
     def test_system_checks_have_no_trusts_condition_errors(self):
@@ -992,38 +1030,16 @@ class TrustOwnPublicOutcomeTests(TestCase):
         cls.dave_notes = cls.data["trusts"]["dave_notes"]
         cls.notes = cls.data["projects"]["alice-private-notes"]
 
-    def test_startup_reentry_and_first_party_builder_are_zero_sql(self):
-        backend = zero_config().configured_backend(CANONICAL_BACKEND_PATH)
-        with self.assertNumQueries(0):
-            donate_installed_permission_conditions(backend)
-
-        isolated_store = TrustsRegistry()
-        isolated = BackendHandle(
-            path="tests.isolated",
-            registry=isolated_store,
-            compiler=PlanQueryCompiler(),
-        )
-        with self.assertNumQueries(0):
-            donate_content_permission_conditions(isolated, Trust)
-        self.assertTrue(
-            isolated_store.evaluate_permission_condition(
-                Trust, "own", self.alice, "trusts.change_trust", self.acme
-            )
-        )
-        self.assertFalse(
-            isolated_store.evaluate_permission_condition(
-                Trust, "own", self.dave, "trusts.change_trust", self.acme
-            )
-        )
-
     def test_trust_own_is_registered_at_startup_and_project_has_none(self):
         alice = User.objects.get(pk=self.alice.pk)
-        # Registered: evaluates fail-closed without a Trust grant, does not raise.
+        # Registered on Zero's registry. Fail-closed without a Trust grant.
         self.assertFalse(alice.has_perm("trusts.change_trust:own", self.acme))
-        with self.assertRaises(AttributeError):
-            alice.has_perm("projects.read_project:own", self.notes)
-        with self.assertRaises(AttributeError):
-            list(Project.objects.permitted("read_project:own", alice))
+        # Project has no :own filter. Unknown names fail closed.
+        self.assertFalse(alice.has_perm("projects.read_project:own", self.notes))
+        self.assertEqual(
+            list(Project.objects.permitted("read_project:own", alice)),
+            [],
+        )
 
     def test_trust_own_object_and_listing_agree(self):
         change_trust = Permission.objects.get(
